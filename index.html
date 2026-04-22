@@ -264,8 +264,7 @@ window.storage = {
         await supaFetch('config?key=eq.ahorros', 'DELETE');
         await supaFetch('config', 'POST', {key: 'ahorros', value: value});
       } else if (key === 'reglas_custom') {
-        await supaFetch('config?key=eq.reglas', 'DELETE');
-        await supaFetch('config', 'POST', {key: 'reglas', value: value});
+        fetch(SUPA_URL + '/rest/v1/config', { method:'POST', headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({key:'reglas', value:value}) }).catch(function(){});
       } else if (key === 'cats_custom_v1') {
         await supaFetch('config?key=eq.cats', 'DELETE');
         await supaFetch('config', 'POST', {key: 'cats', value: value});
@@ -2950,7 +2949,7 @@ function ReglasView({ txns }) {
         if (parts.length >= 2) {
           const patron = parts[0].toUpperCase();
           const cat = parts[1] || "Otros";
-          const sub = parts[2] || (CATEGORIAS[cat]?.subs?.[0] || "Otros");
+          const sub = parts[2] || (getMergedCats()[cat]?.subs?.[0] || "Otros");
           const tipo = parts[3] || "contains";
           if (patron) newRules.push({ patron, cat, sub, tipo });
         }
@@ -3250,6 +3249,13 @@ function parseBancolombiaPDFLines(lines, inferredYear) {
   return rows;
 }
 function ImportarExtractoModal({ onClose, onImport, txns }) {
+  // Ensure custom rules are loaded before parsing
+  React.useEffect(function() {
+    var stored = localStorage.getItem('reglas_custom');
+    if (stored) {
+      try { window.__customRules = JSON.parse(stored); } catch(e) {}
+    }
+  }, []);
   const fileRef = useRef();
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
