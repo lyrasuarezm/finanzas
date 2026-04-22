@@ -1094,8 +1094,8 @@ function esInversion(t) {
 }
 function getPptoMes(ppto, month, year) {
   return ppto.filter((p) => {
-    const d = new Date(p.fecha);
-    return d.getMonth() === month && d.getFullYear() === year;
+    const parts = (p.fecha || '').split('-');
+    return parseInt(parts[1]) - 1 === month && parseInt(parts[0]) === year;
   });
 }
 function getPptoBySub(pptoMes) {
@@ -1631,7 +1631,23 @@ function PresupuestoView({ ppto, setPpto, txns, setTxns, month, year }) {
         });
       }
     };
-    if (forceAll || field === "patrones") {
+    if (field === "patrones") {
+      // Propagate patron to ALL months with same subcategoria+tipo+descripcion
+      const original = ppto.find(function(p) { return p.id === id; });
+      setPpto(function(prev) {
+        return prev.map(function(p) {
+          if (p.subcategoria === original?.subcategoria && 
+              p.tipo === original?.tipo && 
+              p.descripcion === original?.descripcion) {
+            return Object.assign({}, p, { patrones: coercedVal });
+          }
+          return p;
+        });
+      });
+      setEditing(null);
+      return;
+    }
+    if (forceAll) {
       doUpdate(false);
       setEditing(null);
       return;
