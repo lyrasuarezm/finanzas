@@ -330,7 +330,10 @@ window.storage = {
           if (row.key === 'creditos')  localStorage.setItem('creditos_v1', row.value);
           if (row.key === 'ahorros')   localStorage.setItem('ahorros_v1', row.value);
           if (row.key === 'prestamos') localStorage.setItem('prestamos_v1', row.value);
-          if (row.key === 'reglas')    localStorage.setItem('reglas_custom', row.value);
+          if (row.key === 'reglas') {
+            localStorage.setItem('reglas_custom', row.value);
+            try { window.__customRules = JSON.parse(row.value); } catch(e) {}
+          }
           if (row.key === 'cats')      localStorage.setItem('cats_custom_v1', row.value);
           if (row.key === 'ppto' || row.key === 'cuotasTC') {
             try {
@@ -1205,9 +1208,10 @@ function ColorPicker({ value, onChange }) {
 }
 function CatOptions() {
   var opts = [];
-  Object.entries(CATEGORIAS).forEach(function(entry) {
+  var allCats = getMergedCats();
+  Object.entries(allCats).forEach(function(entry) {
     var cat = entry[0], d = entry[1];
-    d.subs.forEach(function(s) {
+    (d.subs || []).forEach(function(s) {
       opts.push(/* @__PURE__ */ React.createElement("option", { key: cat + s, value: s }, cat, " / ", s));
     });
   });
