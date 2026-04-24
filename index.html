@@ -985,21 +985,21 @@ const CATEGORIAS = {
   "Pr\xE9stamos": { subs: ["Pr\xE9stamos"], tipo: "GASTO", color: "#8B4513" }
 };
 const CAT_ICON_MAP = {
-  "Ingresos": "arrowUp",
-  "Vivienda": "home",
-  "Servicios": "zap",
-  "Comidad y Bebida": "coffee",
-  "Entretenimiento": "music",
-  "Vehiculo": "car",
-  "Gastos Financieros": "creditCard",
-  "Bienestar": "heart",
-  "Beb\xE9": "baby",
-  "Inversiones": "barChart",
-  "Salud": "health",
-  "Compras": "shoppingBag",
+  "Ingresos": "arrowUp", "Salario": "arrowUp", "Cesant\xEDas": "arrowUp",
+  "Vivienda": "home", "Arreglos": "home", "Hogar": "home",
+  "Servicios": "zap", "Agua": "zap", "Internet y TV": "zap", "Tel\xE9fono M\xF3vil": "zap", "Administraci\xF3n": "zap", "Electricidad": "zap",
+  "Comida y Bebida": "coffee", "Comidad y Bebida": "coffee", "Supermercado": "coffee", "Restaurante": "coffee", "Merienda": "coffee", "Tienda": "coffee", "Comida": "coffee",
+  "Entretenimiento": "music", "Planes amigos": "music", "Juegos": "music", "Suscripci\xF3n": "music",
+  "Vehiculo": "car", "Veh\xEDculo": "car", "Combustible": "car", "Parqueadero": "car", "Lavada": "car",
+  "Gastos Financieros": "creditCard", "Cr\xE9ditos": "creditCard", "Cuota de manejo": "creditCard", "Tarjeta de Credito": "creditCard",
+  "Bienestar": "heart", "Belleza": "heart",
+  "Beb\xE9": "baby", "Art\xEDculos beb\xE9": "baby", "Ropa beb\xE9": "baby",
+  "Inversiones": "barChart", "CDT": "barChart",
+  "Salud": "health", "Farmacia": "health", "Atenci\xF3n Medica": "health", "Prepagada": "health",
+  "Compras": "shoppingBag", "Ropa y Calzado": "shoppingBag", "Regalos": "shoppingBag", "Higiene y ba\xF1o": "shoppingBag",
   "Transporte": "car",
-  "Otros": "box",
-  "Pr\xE9stamos": "loan"
+  "Pr\xE9stamos": "loan", "Prest\xE9": "loan",
+  "Otros": "box", "Otros costos": "box"
 };
 const REGLAS_COMERCIOS = [
   { patron: "MEDICINA PREPAGADA COO", sub: "Prepagada", cat: "Salud", tipo: "exact" },
@@ -1087,24 +1087,26 @@ function getCatForSub(sub) {
 }
 function matchComercio(nombre, monto) {
   const n = (nombre || "").toUpperCase();
-  // Helper: CSV stores cat=subcategoria, sub=categoria (inverted)
-  // Normalize so return is always { cat: CATEGORIA, sub: SUBCATEGORIA }
+  const m = Math.abs(monto || 0);
   function normRule(r) {
     if (!r) return null;
     var allCats = getMergedCats();
-    // If cat is a known categoria key, it's correct
     if (allCats[r.cat]) return { cat: r.cat, sub: r.sub, patron: r.patron };
-    // If sub is a known categoria key, they're inverted - swap them
     if (allCats[r.sub]) return { cat: r.sub, sub: r.cat, patron: r.patron };
-    // Otherwise return as-is
     return { cat: r.cat, sub: r.sub, patron: r.patron };
   }
+  function montoOk(r) {
+    if (!r.montoMin && !r.montoMax) return true;
+    if (r.montoMin && m < r.montoMin) return false;
+    if (r.montoMax && m > r.montoMax) return false;
+    return true;
+  }
   for (const r of window.__pptoPatrones || []) {
-    if (n.includes(r.patron.toUpperCase())) return normRule(r);
+    if (n.includes(r.patron.toUpperCase()) && montoOk(r)) return normRule(r);
   }
   for (const r of window.__customRules || []) {
     const p = (r.patron || "").toUpperCase();
-    if (!p) continue;
+    if (!p || !montoOk(r)) continue;
     if (r.tipo === "exact" && n === p) return normRule(r);
     if ((!r.tipo || r.tipo === "contains" || r.tipo === "Transaccion" || r.tipo === "Fuente") && n.includes(p)) return normRule(r);
   }
@@ -2129,7 +2131,17 @@ function CreditosView({ ppto, month, year, txns }) {
     setPagoModal(null);
     setPagoForm({ monto: "", fecha: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10), nota: "" });
   }
-  const CreditoFormUI = ({ title, onSave, onCancel }) => /* @__PURE__ */ React.createElement(Modal, { title, onClose: onCancel, w: 520 }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Nombre"), /* @__PURE__ */ React.createElement("input", { style: IS, value: form.nombre || "", onChange: (e) => setForm((f) => ({ ...f, nombre: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Entidad"), /* @__PURE__ */ React.createElement("input", { style: IS, value: form.entidad || "", onChange: (e) => setForm((f) => ({ ...f, entidad: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Desembolso ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.desembolso || "", onChange: (e) => setForm((f) => ({ ...f, desembolso: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Saldo actual ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.saldo || "", onChange: (e) => setForm((f) => ({ ...f, saldo: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Cuota mensual ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.cuota || "", onChange: (e) => setForm((f) => ({ ...f, cuota: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "TEA (%)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", step: "0.01", value: form.tea || "", onChange: (e) => setForm((f) => ({ ...f, tea: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fecha inicio"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: form.fecha_inicio || "", onChange: (e) => setForm((f) => ({ ...f, fecha_inicio: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fecha fin"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: form.fecha_fin || "", onChange: (e) => setForm((f) => ({ ...f, fecha_fin: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Patr\xF3n de comercio (para cruce autom\xE1tico)"), /* @__PURE__ */ React.createElement(PatronDropdown, { value: form.patron || "", onChange: (v) => setForm((f) => ({ ...f, patron: v })), txns }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL, marginTop: 3 } }, "Al cargar extracto, transacciones con este texto se registran autom\xE1ticamente como pago")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Notas"), /* @__PURE__ */ React.createElement("textarea", { style: { ...IS, resize: "vertical", minHeight: 40 }, value: form.notas || "", onChange: (e) => setForm((f) => ({ ...f, notas: e.target.value })) })), /* @__PURE__ */ React.createElement(ColorPicker, { value: form.color || "#8B4513", onChange: (col) => setForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: onCancel }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: onSave }, "Guardar"))));
+  const CreditoFormUI = ({ title, onSave, onCancel }) => /* @__PURE__ */ React.createElement(Modal, { title, onClose: onCancel, w: 520 }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Nombre"), /* @__PURE__ */ React.createElement("input", { style: IS, value: form.nombre || "", onChange: (e) => setForm((f) => ({ ...f, nombre: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Entidad"), /* @__PURE__ */ React.createElement("input", { style: IS, value: form.entidad || "", onChange: (e) => setForm((f) => ({ ...f, entidad: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Desembolso ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.desembolso || "", onChange: (e) => setForm((f) => ({ ...f, desembolso: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Saldo actual ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.saldo || "", onChange: (e) => setForm((f) => ({ ...f, saldo: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Cuota mensual ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: form.cuota || "", onChange: (e) => setForm((f) => ({ ...f, cuota: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "TEA (%)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", step: "0.01", value: form.tea || "", onChange: (e) => setForm((f) => ({ ...f, tea: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fecha inicio"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: form.fecha_inicio || "", onChange: (e) => setForm((f) => ({ ...f, fecha_inicio: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fecha fin"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: form.fecha_fin || "", onChange: (e) => setForm((f) => ({ ...f, fecha_fin: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Patr\xF3n de comercio (para cruce autom\xE1tico)"), /* @__PURE__ */ React.createElement(PatronDropdown, { value: form.patron || "", onChange: (v) => setForm((f) => ({ ...f, patron: v })), txns }), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL, marginTop: 3 } }, "Al cargar extracto, transacciones con este texto se registran autom\xE1ticamente como pago")), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Notas"), /* @__PURE__ */ React.createElement("textarea", { style: { ...IS, resize: "vertical", minHeight: 40 }, value: form.notas || "", onChange: (e) => setForm((f) => ({ ...f, notas: e.target.value })) })), /* @__PURE__ */ React.createElement(ColorPicker, { value: form.color || "#8B4513", onChange: (col) => setForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 4 } },
+      /* @__PURE__ */ React.createElement("div", null,
+        /* @__PURE__ */ React.createElement(Lbl, null, "Monto m\xEDn (opcional)"),
+        /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", placeholder: "0", value: form.montoMin || "", onChange: (e) => setForm((f) => ({ ...f, montoMin: e.target.value })) })
+      ),
+      /* @__PURE__ */ React.createElement("div", null,
+        /* @__PURE__ */ React.createElement(Lbl, null, "Monto m\xE1x (opcional)"),
+        /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", placeholder: "\u221E", value: form.montoMax || "", onChange: (e) => setForm((f) => ({ ...f, montoMax: e.target.value })) })
+      )
+    ),
+    /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: onCancel }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: onSave }, "Guardar"))));
   const amortCredito = amortModal ? creditos.find((c) => c.id === amortModal) : null;
   const tableBase = amortCredito ? calcAmortTable(amortCredito, 0) : [];
   const tableSimu = amortCredito && simuAbono ? calcAmortTable(amortCredito, parseFloat(simuAbono) || 0) : [];
@@ -2671,6 +2683,14 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   function delTxn(id) {
     setTxns((prev) => prev.filter((t) => t.id !== id));
   }
+  function reclasificarTxn(id) {
+    setTxns((prev) => prev.map((t) => {
+      if (t.id !== id) return t;
+      var match = matchComercio(t.descripcion, t.valor);
+      if (!match) return t;
+      return Object.assign({}, t, { categoria: match.cat, subcategoria: match.sub });
+    }));
+  }
   const totalIng = filtered.filter((t) => t.tipo === "INGRESO").reduce((s, t) => s + t.valor, 0);
   const totalGas = filtered.filter((t) => t.tipo === "GASTO").reduce((s, t) => s + t.valor, 0);
   const cats = ["Todas", ...Object.keys(getMergedCats())];
@@ -2700,6 +2720,17 @@ function TransaccionesView({ txns, setTxns, month, year }) {
     const cat = getCatForSub(t.subcategoria) || t.categoria || "Otros";
     const color = CATEGORIAS[cat]?.color || C.textL;
     return /* @__PURE__ */ React.createElement("div", { key: t.id, style: { background: C.card, borderRadius: 12, padding: "9px 14px", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(IcoBadge, { name: CAT_ICON_MAP[cat] || "box", color, size: 12 }), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.descripcion || t.subcategoria), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textL, display: "flex", gap: 6, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", null, t.fecha), /* @__PURE__ */ React.createElement(Badge, { t: t.fuente || "Manual" }), /* @__PURE__ */ React.createElement("span", { style: { color } }, t.subcategoria))), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: t.tipo === "INGRESO" ? C.green : C.red } }, t.tipo === "INGRESO" ? "+" : "-", fmt(t.valor))), /* @__PURE__ */ React.createElement(
+      "button",
+      {
+        onClick: () => reclasificarTxn(t.id),
+        title: "Reclasificar con reglas actuales",
+        style: { border: "none", background: "transparent", cursor: "pointer", padding: 4, opacity: 0.35 },
+        onMouseEnter: (e) => e.currentTarget.style.opacity = "1",
+        onMouseLeave: (e) => e.currentTarget.style.opacity = ".35"
+      },
+      /* @__PURE__ */ React.createElement(Ico, { name: "refresh", size: 13, color: C.blue })
+    ),
+    /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: () => delTxn(t.id),
@@ -2895,7 +2926,10 @@ function ReglasView({ txns }) {
   }, [txns, allReglas]);
   function addRegla() {
     if (!form.patron || !form.sub || !form.cat) return;
-    saveReglas([...reglas, { patron: form.patron.toUpperCase(), sub: form.sub, cat: form.cat, tipo: form.tipo || "contains" }]);
+    var rule = { patron: form.patron.toUpperCase(), sub: form.sub, cat: form.cat, tipo: form.tipo || "contains" };
+    if (form.montoMin) rule.montoMin = parseFloat(form.montoMin);
+    if (form.montoMax) rule.montoMax = parseFloat(form.montoMax);
+    saveReglas([...reglas, rule]);
     setAddRModal(false);
     setForm({});
   }
