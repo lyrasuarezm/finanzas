@@ -1076,8 +1076,10 @@ function matchComercio(nombre, monto) {
     if (n.includes(r.patron.toUpperCase())) return { sub: r.sub, cat: r.cat };
   }
   for (const r of window.__customRules || []) {
-    if (r.tipo === "exact" && n === r.patron.toUpperCase()) return r;
-    if (r.tipo === "contains" && n.includes(r.patron.toUpperCase())) return r;
+    const p = (r.patron || "").toUpperCase();
+    if (!p) continue;
+    if (r.tipo === "exact" && n === p) return r;
+    if ((!r.tipo || r.tipo === "contains" || r.tipo === "Transaccion" || r.tipo === "transaccion") && n.includes(p)) return r;
   }
   for (const r of REGLAS_COMERCIOS) {
     if (r.tipo === "exact" && n === r.patron.toUpperCase()) return r;
@@ -2948,9 +2950,14 @@ function ReglasView({ txns }) {
         const parts = line.split(sep).map((p) => p.trim().replace(/^"|"$/g, ""));
         if (parts.length >= 2) {
           const patron = parts[0].toUpperCase();
-          const cat = parts[1] || "Otros";
-          const sub = parts[2] || (getMergedCats()[cat]?.subs?.[0] || "Otros");
-          const tipo = parts[3] || "contains";
+          // Skip header row
+          if (patron === 'COMERCIO' || patron === 'PATRON' || patron === 'NOMBRE') continue;
+          // CSV columns: COMERCIO | Subcategoria | Categoria | Fuente
+          // parts[1] = subcategoria, parts[2] = categoria
+          const sub = parts[1] || "Otros";
+          const cat = parts[2] || getMergedCats()[Object.keys(getMergedCats()).find(k => (getMergedCats()[k].subs||[]).includes(sub))] || "Otros";
+          // Always use "contains" - ignore CSV tipo column
+          const tipo = "contains";
           if (patron) newRules.push({ patron, cat, sub, tipo });
         }
       });
