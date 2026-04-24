@@ -2962,7 +2962,9 @@ function ReglasView({ txns }) {
         }
       });
       if (newRules.length > 0) {
-        saveReglas([...reglas, ...newRules]);
+        // Deduplicate - merge with existing, newer rules win
+        var existing = reglas.filter(r => !newRules.find(n => n.patron === r.patron));
+        saveReglas([...existing, ...newRules]);
         alert(newRules.length + " reglas importadas del CSV.");
       } else {
         alert("No se encontraron reglas en el CSV. Formato esperado: PATRON;Categoria;Subcategoria;contains");
@@ -3771,10 +3773,14 @@ function App() {
     }).catch(() => {
       setPpto(parsePPTO());
     }).finally(() => setLoaded(true));
+    // Load reglas synchronously from localStorage immediately
+    var _reglasStored = localStorage.getItem("reglas_custom");
+    if (_reglasStored) {
+      try { window.__customRules = JSON.parse(_reglasStored); } catch(e) {}
+    }
     window.storage.get("reglas_custom").then((r) => {
       if (r?.value) window.__customRules = JSON.parse(r.value);
-    }).catch(() => {
-    });
+    }).catch(() => {});
   }, []);
   useEffect(() => {
     if (loaded) {
