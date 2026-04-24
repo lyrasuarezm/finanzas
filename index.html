@@ -3831,6 +3831,12 @@ function App() {
 }
 
 window.addEventListener('load', function() {
+  // Load custom rules IMMEDIATELY before anything else
+  var _reglasRaw = localStorage.getItem('reglas_custom');
+  if (_reglasRaw) {
+    try { window.__customRules = JSON.parse(_reglasRaw); } catch(e) {}
+  }
+
   // Check if this is a new device (no local data)
   var existing = localStorage.getItem('fin-v4');
   var parsed = existing ? JSON.parse(existing) : null;
