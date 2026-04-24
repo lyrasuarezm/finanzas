@@ -1035,6 +1035,21 @@ async function loadStorage() {
   }
   return null;
 }
+function reclasificarTxns(txns) {
+  // Re-run matchComercio on ALL transactions and update categoria/subcategoria
+  var updated = 0;
+  var result = txns.map(function(t) {
+    var match = matchComercio(t.descripcion, t.valor);
+    if (match) {
+      updated++;
+      return Object.assign({}, t, { categoria: match.cat, subcategoria: match.sub });
+    }
+    return t;
+  });
+  console.log('Reclasificadas:', updated, 'de', txns.length, 'transacciones');
+  return result;
+}
+
 async function saveStorage(d) {
   try {
     // Save to localStorage immediately
@@ -1072,21 +1087,33 @@ function getCatForSub(sub) {
 }
 function matchComercio(nombre, monto) {
   const n = (nombre || "").toUpperCase();
+  // Helper: CSV stores cat=subcategoria, sub=categoria (inverted)
+  // Normalize so return is always { cat: CATEGORIA, sub: SUBCATEGORIA }
+  function normRule(r) {
+    if (!r) return null;
+    var allCats = getMergedCats();
+    // If cat is a known categoria key, it's correct
+    if (allCats[r.cat]) return { cat: r.cat, sub: r.sub, patron: r.patron };
+    // If sub is a known categoria key, they're inverted - swap them
+    if (allCats[r.sub]) return { cat: r.sub, sub: r.cat, patron: r.patron };
+    // Otherwise return as-is
+    return { cat: r.cat, sub: r.sub, patron: r.patron };
+  }
   for (const r of window.__pptoPatrones || []) {
-    if (n.includes(r.patron.toUpperCase())) return { sub: r.sub, cat: r.cat };
+    if (n.includes(r.patron.toUpperCase())) return normRule(r);
   }
   for (const r of window.__customRules || []) {
     const p = (r.patron || "").toUpperCase();
     if (!p) continue;
-    if (r.tipo === "exact" && n === p) return r;
-    if ((!r.tipo || r.tipo === "contains" || r.tipo === "Transaccion" || r.tipo === "transaccion") && n.includes(p)) return r;
+    if (r.tipo === "exact" && n === p) return normRule(r);
+    if ((!r.tipo || r.tipo === "contains" || r.tipo === "Transaccion" || r.tipo === "Fuente") && n.includes(p)) return normRule(r);
   }
   for (const r of REGLAS_COMERCIOS) {
-    if (r.tipo === "exact" && n === r.patron.toUpperCase()) return r;
-    if (r.tipo === "contains" && n.includes(r.patron.toUpperCase())) return r;
+    if (r.tipo === "exact" && n === r.patron.toUpperCase()) return normRule(r);
+    if (r.tipo === "contains" && n.includes(r.patron.toUpperCase())) return normRule(r);
   }
   if (n.includes("NEQUI") && monto && Math.abs(monto) < 15e3) {
-    return { sub: "Tienda", cat: "Comidad y Bebida" };
+    return { cat: "Comida y Bebida", sub: "Tienda" };
   }
   return null;
 }
@@ -2792,6 +2819,7 @@ function ReglasView({ txns }) {
   const [reglas, setReglas] = useState([]);
   const [catsCustom, setCatsCustom] = useState({});
   const [search, setSearch] = useState("");
+  const [catFilter, setCatFilter] = useState("");
   const [addRModal, setAddRModal] = useState(false);
   const [editRModal, setEditRModal] = useState(null);
   const [catModal, setCatModal] = useState(null);
@@ -2838,7 +2866,12 @@ function ReglasView({ txns }) {
     return m;
   }, [catsCustom]);
   const allReglas = [...REGLAS_COMERCIOS.filter((_, i) => !deletedBuiltin.includes(i)), ...reglas];
-  const displayed = allReglas.map((r, origIdx) => ({ ...r, _origIdx: origIdx, _isCustom: origIdx >= REGLAS_COMERCIOS.length, _customIdx: origIdx - REGLAS_COMERCIOS.length })).filter((r) => !search || r.patron.toLowerCase().includes(search.toLowerCase()) || r.cat?.toLowerCase().includes(search.toLowerCase()) || r.sub?.toLowerCase().includes(search.toLowerCase()));
+  const displayed = allReglas.map((r, origIdx) => ({ ...r, _origIdx: origIdx, _isCustom: origIdx >= REGLAS_COMERCIOS.length, _customIdx: origIdx - REGLAS_COMERCIOS.length })).filter((r) => {
+    if (search && !r.patron.toLowerCase().includes(search.toLowerCase()) && !r.cat?.toLowerCase().includes(search.toLowerCase()) && !r.sub?.toLowerCase().includes(search.toLowerCase())) return false;
+    if (catFilter && r.cat !== catFilter && r.sub !== catFilter) return false;
+    return true;
+  });
+  const allCatsList = [...new Set(reglas.map(r => r.cat).filter(Boolean))].sort();
   const unclassifiedDescs = useMemo(() => {
     const seen = /* @__PURE__ */ new Set([...allReglas.map((r) => r.patron.toUpperCase())]);
     const descs = /* @__PURE__ */ new Set();
@@ -2938,7 +2971,34 @@ function ReglasView({ txns }) {
     },
     /* @__PURE__ */ React.createElement(Ico, { name: "upload", size: 13, color: C.textM }),
     " CSV"
-  ), /* @__PURE__ */ React.createElement("input", { id: "csv_reglas_input", type: "file", accept: ".csv", style: { display: "none" }, onChange: (e) => {
+  ),
+  /* @__PURE__ */ React.createElement("select", {
+    value: catFilter, onChange: (e) => setCatFilter(e.target.value),
+    style: { border: `1px solid ${C.border}`, background: C.card, borderRadius: 8, padding: "7px 10px", fontSize: 11, color: C.text, cursor: "pointer" }
+  },
+    /* @__PURE__ */ React.createElement("option", { value: "" }, "Todas las categorías"),
+    allCatsList.map(c => /* @__PURE__ */ React.createElement("option", { key: c, value: c }, c))
+  ),
+  /* @__PURE__ */ React.createElement("button", {
+    onClick: () => {
+      if (window.confirm("¿Reclasificar TODAS las transacciones con las reglas actuales?")) {
+        window.__doReclasificar && window.__doReclasificar();
+      }
+    },
+    style: { border: `1px solid ${C.green}`, background: C.greenL || "#e8f5e9", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 11, color: C.green, whiteSpace: "nowrap", display: "flex", alignItems: "center", gap: 4 }
+  },
+    /* @__PURE__ */ React.createElement(Ico, { name: "refresh", size: 13, color: C.green }),
+    " Reclasificar txns"
+  ),
+  /* @__PURE__ */ React.createElement("button", {
+    onClick: () => {
+      if (window.confirm("¿Borrar TODOS los comercios predefinidos? Solo quedarán los tuyos.")) {
+        setDeletedBuiltin(REGLAS_COMERCIOS.map((_, i) => i));
+      }
+    },
+    style: { border: `1px solid ${C.red}`, background: "#fff0f0", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 11, color: C.red, whiteSpace: "nowrap" }
+  }, "Borrar predefinidos"),
+  /* @__PURE__ */ React.createElement("input", { id: "csv_reglas_input", type: "file", accept: ".csv", style: { display: "none" }, onChange: (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
@@ -2951,14 +3011,26 @@ function ReglasView({ txns }) {
         if (parts.length >= 2) {
           const patron = parts[0].toUpperCase();
           // Skip header row
-          if (patron === 'COMERCIO' || patron === 'PATRON' || patron === 'NOMBRE') return;
+          if (!patron || patron === 'COMERCIO' || patron === 'PATRON' || patron === 'NOMBRE') return;
           // CSV columns: COMERCIO | Subcategoria | Categoria | Fuente
-          // parts[1] = subcategoria, parts[2] = categoria
-          const sub = parts[1] || "Otros";
-          const cat = parts[2] || getMergedCats()[Object.keys(getMergedCats()).find(k => (getMergedCats()[k].subs||[]).includes(sub))] || "Otros";
-          // Always use "contains" - ignore CSV tipo column
-          const tipo = "contains";
-          if (patron) newRules.push({ patron, cat, sub, tipo });
+          // Normalize: ensure cat=categoria, sub=subcategoria
+          var rawSub = (parts[1] || '').trim();
+          var rawCat = (parts[2] || '').trim();
+          var allCats = getMergedCats();
+          var cat, sub;
+          if (allCats[rawCat]) {
+            // rawCat is a valid categoria
+            cat = rawCat; sub = rawSub;
+          } else if (allCats[rawSub]) {
+            // rawSub is actually the categoria (inverted)
+            cat = rawSub; sub = rawCat;
+          } else {
+            // Try to find cat by sub
+            var foundCat = Object.keys(allCats).find(k => (allCats[k].subs||[]).includes(rawSub));
+            cat = foundCat || rawCat || 'Otros';
+            sub = rawSub || 'Otros';
+          }
+          if (patron) newRules.push({ patron, cat, sub, tipo: 'contains' });
         }
       });
       if (newRules.length > 0) {
@@ -3783,6 +3855,15 @@ function App() {
     }).catch(() => {});
   }, []);
   useEffect(() => {
+    // Register reclasificar function globally so ComerciosView can call it
+    window.__doReclasificar = function() {
+      var reclasificadas = reclasificarTxns(txns);
+      setTxns(reclasificadas);
+      alert('✅ Reclasificadas ' + reclasificadas.filter((t,i) => t.categoria !== txns[i].categoria || t.subcategoria !== txns[i].subcategoria).length + ' transacciones');
+    };
+  }, [txns]);
+
+  useEffect(() => {
     if (loaded) {
       saveStorage({ ppto, txns, cuotasTC });
       const rules = [];
@@ -3831,6 +3912,11 @@ function App() {
 }
 
 window.addEventListener('load', function() {
+  // Reclasificar button handler - App will set this after mounting
+  window.__doReclasificar = function() {
+    alert('Cargando app... intenta de nuevo en un momento');
+  };
+
   // Load custom rules IMMEDIATELY before anything else
   var _reglasRaw = localStorage.getItem('reglas_custom');
   if (_reglasRaw) {
