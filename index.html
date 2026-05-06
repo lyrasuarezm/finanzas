@@ -985,48 +985,134 @@ const CATEGORIAS = {
   "Pr\xE9stamos": { subs: ["Pr\xE9stamos"], tipo: "GASTO", color: "#8B4513" }
 };
 const CAT_ICON_MAP = {
-  "Ingresos": "arrowUp", "Salario": "arrowUp", "Cesant\xEDas": "arrowUp",
-  "Vivienda": "home", "Arreglos": "home", "Hogar": "home",
-  "Servicios": "zap", "Agua": "zap", "Internet y TV": "zap", "Tel\xE9fono M\xF3vil": "zap", "Administraci\xF3n": "zap", "Electricidad": "zap",
-  "Comida y Bebida": "coffee", "Comidad y Bebida": "coffee", "Supermercado": "coffee", "Restaurante": "coffee", "Merienda": "coffee", "Tienda": "coffee", "Comida": "coffee",
-  "Entretenimiento": "music", "Planes amigos": "music", "Juegos": "music", "Suscripci\xF3n": "music",
-  "Vehiculo": "car", "Veh\xEDculo": "car", "Combustible": "car", "Parqueadero": "car", "Lavada": "car",
-  "Gastos Financieros": "creditCard", "Cr\xE9ditos": "creditCard", "Cuota de manejo": "creditCard", "Tarjeta de Credito": "creditCard",
-  "Bienestar": "heart", "Belleza": "heart",
-  "Beb\xE9": "baby", "Art\xEDculos beb\xE9": "baby", "Ropa beb\xE9": "baby",
-  "Inversiones": "barChart", "CDT": "barChart",
-  "Salud": "health", "Farmacia": "health", "Atenci\xF3n Medica": "health", "Prepagada": "health",
-  "Compras": "shoppingBag", "Ropa y Calzado": "shoppingBag", "Regalos": "shoppingBag", "Higiene y ba\xF1o": "shoppingBag",
+  "Ingresos": "arrowUp",
+  "Salario": "arrowUp",
+  "Cesant\xEDas": "arrowUp",
+  "Donaci\xF3n": "arrowUp",
+  "Otros ingresos": "arrowUp",
+  "Vivienda": "home",
+  "Administraci\xF3n": "home",
+  "Arreglos": "home",
+  "Servicios": "zap",
+  "Agua": "zap",
+  "Energ\xEDa": "zap",
+  "Gas": "zap",
+  "Internet y TV": "zap",
+  "Telefono Movil": "zap",
+  "Suscripci\xF3n": "zap",
+  "Servicios Gen": "zap",
+  "Comida y Bebida": "coffee",
+  "Comidad y Bebida": "coffee",
+  "Supermercado": "coffee",
+  "Comida": "coffee",
+  "Merienda": "coffee",
+  "Tienda": "coffee",
+  "Restaurante": "coffee",
+  "Entretenimiento": "music",
+  "Planes amigos": "music",
+  "Juegos": "music",
+  "Tiquetes": "music",
+  "Vehiculo": "car",
+  "Veh\xEDculo": "car",
+  "Combustible": "car",
+  "Lavada": "car",
+  "Impuestos": "car",
+  "Parqueadero": "car",
+  "Gastos Financieros": "creditCard",
+  "Creditos": "creditCard",
+  "Tarjeta de Credito": "creditCard",
+  "Cuota de manejo": "creditCard",
+  "Bienestar": "heart",
+  "Belleza": "heart",
+  "Beb\xE9": "baby",
+  "Articulos beb\xE9": "baby",
+  "Higiene y ba\xF1o": "baby",
+  "Ropa beb\xE9": "baby",
+  "Inversiones": "barChart",
+  "Ahorros": "barChart",
+  "Salud": "health",
+  "Prepagada": "health",
+  "Farmacia": "health",
+  "Atenci\xF3n Medica": "health",
+  "Ex\xE1men m\xE9dico": "health",
+  "Compras": "shoppingBag",
+  "Ropa y Calzado": "shoppingBag",
+  "Regalos": "shoppingBag",
+  "Hogar": "home",
+  "Varios": "shoppingBag",
   "Transporte": "car",
-  "Pr\xE9stamos": "loan", "Prest\xE9": "loan",
-  "Otros": "box", "Otros costos": "box"
+  "Taxi": "car",
+  "Bus": "car",
+  "Otros": "box",
+  "Otros costos": "box",
+  "Prest\xE9": "loan",
+  "Pr\xE9stamos": "loan",
 };
-const REGLAS_COMERCIOS = [
-  { patron: "MEDICINA PREPAGADA COO", sub: "Prepagada", cat: "Salud", tipo: "exact" },
-  { patron: "PAGO PSE FIDUCIARIA BANCOLOMB", sub: "Agua", cat: "Servicios", tipo: "exact" },
-  { patron: "PAGO CREDITO SUC VIRTUAL", sub: "Creditos", cat: "Gastos Financieros", tipo: "exact" },
-  { patron: "PAGO TARJETA CREDITO", sub: "Tarjeta de Credito", cat: "Gastos Financieros", tipo: "exact" },
-  { patron: "CREAMOS", sub: "Salario", cat: "Ingresos", tipo: "contains" },
-  { patron: "TRADING", sub: "Salario", cat: "Ingresos", tipo: "contains" },
-  { patron: "NOMINA", sub: "Salario", cat: "Ingresos", tipo: "contains" },
-  { patron: "SUPERTIENDAS OL\xCDMPICA", sub: "Supermercado", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "EXITO", sub: "Supermercado", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "CARULLA", sub: "Supermercado", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "D1", sub: "Tienda", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "ARA", sub: "Tienda", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "MERCADO PAGO", sub: "Articulos beb\xE9", cat: "Beb\xE9", tipo: "contains" },
-  { patron: "MERCA", sub: "Supermercado", cat: "Comidad y Bebida", tipo: "contains" },
-  { patron: "ALKOSTO", sub: "Hogar", cat: "Compras", tipo: "contains" },
-  { patron: "HOMECENTER", sub: "Hogar", cat: "Compras", tipo: "contains" },
-  { patron: "NETFLIX", sub: "Suscripci\xF3n", cat: "Servicios", tipo: "contains" },
-  { patron: "SPOTIFY", sub: "Suscripci\xF3n", cat: "Servicios", tipo: "contains" },
-  { patron: "CLARO", sub: "Telefono Movil", cat: "Servicios", tipo: "contains" },
-  { patron: "TIGO", sub: "Internet y TV", cat: "Servicios", tipo: "contains" },
-  { patron: "ESTACION", sub: "Combustible", cat: "Vehiculo", tipo: "contains" },
-  { patron: "COMBUSTIBLE", sub: "Combustible", cat: "Vehiculo", tipo: "contains" },
-  { patron: "SERVIENTREGA", sub: "Compras", cat: "Compras", tipo: "contains" },
-  { patron: "DOMICILIOS", sub: "Comida", cat: "Comidad y Bebida", tipo: "contains" }
-];
+const CAT_COLOR_MAP = {
+  "Ingresos": "#506B52",
+  "Salario": "#506B52",
+  "Cesant\xEDas": "#506B52",
+  "Donaci\xF3n": "#506B52",
+  "Otros ingresos": "#506B52",
+  "Vivienda": "#6B4F3A",
+  "Administraci\xF3n": "#6B4F3A",
+  "Arreglos": "#6B4F3A",
+  "Servicios": "#4A7B8C",
+  "Agua": "#4A7B8C",
+  "Energ\xEDa": "#4A7B8C",
+  "Gas": "#4A7B8C",
+  "Internet y TV": "#4A7B8C",
+  "Telefono Movil": "#4A7B8C",
+  "Suscripci\xF3n": "#4A7B8C",
+  "Servicios Gen": "#4A7B8C",
+  "Comida y Bebida": "#A0785A",
+  "Comidad y Bebida": "#A0785A",
+  "Supermercado": "#A0785A",
+  "Comida": "#A0785A",
+  "Merienda": "#A0785A",
+  "Tienda": "#A0785A",
+  "Restaurante": "#A0785A",
+  "Entretenimiento": "#7B6A8C",
+  "Planes amigos": "#7B6A8C",
+  "Juegos": "#7B6A8C",
+  "Tiquetes": "#7B6A8C",
+  "Vehiculo": "#5C6B7A",
+  "Veh\xEDculo": "#5C6B7A",
+  "Combustible": "#5C6B7A",
+  "Lavada": "#5C6B7A",
+  "Impuestos": "#5C6B7A",
+  "Parqueadero": "#5C6B7A",
+  "Gastos Financieros": "#8B4513",
+  "Creditos": "#8B4513",
+  "Tarjeta de Credito": "#8B4513",
+  "Cuota de manejo": "#8B4513",
+  "Bienestar": "#7A9E7C",
+  "Belleza": "#7A9E7C",
+  "Beb\xE9": "#C9A87C",
+  "Articulos beb\xE9": "#C9A87C",
+  "Higiene y ba\xF1o": "#C9A87C",
+  "Ropa beb\xE9": "#C9A87C",
+  "Inversiones": "#506B52",
+  "Ahorros": "#506B52",
+  "Salud": "#4A7B8C",
+  "Prepagada": "#4A7B8C",
+  "Farmacia": "#4A7B8C",
+  "Atenci\xF3n Medica": "#4A7B8C",
+  "Ex\xE1men m\xE9dico": "#4A7B8C",
+  "Compras": "#7B6A8C",
+  "Ropa y Calzado": "#7B6A8C",
+  "Regalos": "#7B6A8C",
+  "Hogar": "#6B4F3A",
+  "Varios": "#7B6A8C",
+  "Transporte": "#5C6B7A",
+  "Taxi": "#5C6B7A",
+  "Bus": "#5C6B7A",
+  "Otros": "#8C8C8C",
+  "Otros costos": "#8C8C8C",
+  "Prest\xE9": "#8B4513",
+  "Pr\xE9stamos": "#8B4513",
+};
+const REGLAS_COMERCIOS = []; // Load your rules via CSV in Comercios tab
 async function loadStorage() {
   try {
     const r = await window.storage.get(STORAGE_KEY);
@@ -3026,12 +3112,14 @@ function ReglasView({ txns }) {
   ),
   /* @__PURE__ */ React.createElement("button", {
     onClick: () => {
-      if (window.confirm("¿Borrar TODOS los comercios predefinidos? Solo quedarán los tuyos.")) {
-        setDeletedBuiltin(REGLAS_COMERCIOS.map((_, i) => i));
+      if (window.confirm("¿Borrar TODAS las reglas de comercios? Esta acción no se puede deshacer.")) {
+        saveReglas([]);
+        window.__customRules = [];
+        alert("✅ Reglas borradas. Ahora carga tu CSV.");
       }
     },
     style: { border: `1px solid ${C.red}`, background: "#fff0f0", borderRadius: 8, padding: "8px 12px", cursor: "pointer", fontSize: 11, color: C.red, whiteSpace: "nowrap" }
-  }, "Borrar predefinidos"),
+  }, "🗑️ Borrar todas"),
   /* @__PURE__ */ React.createElement("input", { id: "csv_reglas_input", type: "file", accept: ".csv", style: { display: "none" }, onChange: (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -3082,7 +3170,7 @@ function ReglasView({ txns }) {
     setForm({ tipo: "contains", cat: "", patron: void 0 });
     setAddRModal(true);
   }, style: { border: "none", background: "transparent", cursor: "pointer", color: C.blue, fontWeight: 700, fontSize: 11 } }, "Clasificar ahora \u2192")), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL, marginBottom: 8 } }, "Mostrando ", displayed.length, " de ", allReglas.length, " reglas"), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 3 } }, displayed.map((r) => {
-    const color = allCats[r.cat]?.color || C.textL;
+    const color = CAT_COLOR_MAP[r.cat] || CAT_COLOR_MAP[r.sub] || allCats[r.cat]?.color || allCats[r.sub]?.color || C.textL;
     const isCustom = r._isCustom || false;
     const customIdx = r._customIdx >= 0 ? r._customIdx : 0;
     return /* @__PURE__ */ React.createElement("div", { key: r._origIdx, style: { background: C.card, borderRadius: 10, padding: "9px 12px", border: `1px solid ${isCustom ? C.amber + "30" : C.border}`, display: "flex", alignItems: "center", gap: 8 } }, /* @__PURE__ */ React.createElement(IcoBadge, { name: CAT_ICON_MAP[r.cat] || "box", color, size: 12 }), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, fontWeight: 600, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, r.patron), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL } }, r.cat, " / ", r.sub, " \xB7 ", r.tipo === "exact" ? "exacto" : "parcial")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 4, flexShrink: 0 } }, isCustom && /* @__PURE__ */ React.createElement(
@@ -3954,7 +4042,19 @@ window.addEventListener('load', function() {
   // Load custom rules IMMEDIATELY before anything else
   var _reglasRaw = localStorage.getItem('reglas_custom');
   if (_reglasRaw) {
-    try { window.__customRules = JSON.parse(_reglasRaw); } catch(e) {}
+    try {
+      var _reglas = JSON.parse(_reglasRaw);
+      // Deduplicate on load
+      var _seen = new Set();
+      _reglas = _reglas.filter(function(r) {
+        if (!r.patron || _seen.has(r.patron)) return false;
+        _seen.add(r.patron);
+        return true;
+      });
+      // Remove header rows
+      _reglas = _reglas.filter(function(r) { return r.patron !== 'COMERCIO' && r.patron !== 'PATRON'; });
+      window.__customRules = _reglas;
+    } catch(e) {}
   }
 
   // Check if this is a new device (no local data)
