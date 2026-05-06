@@ -304,7 +304,8 @@ window.storage = {
         var parsed = existing ? JSON.parse(existing) : null;
         var hasTxns = parsed && (
           (Array.isArray(parsed) && parsed.length > 0) ||
-          (parsed.txns && parsed.txns.length > 0)
+          (parsed.txns && Array.isArray(parsed.txns) && parsed.txns.length > 0) ||
+          (parsed.ppto && Array.isArray(parsed.ppto) && parsed.ppto.length > 0)
         );
         if (!hasTxns) {
           // New device - load from Supabase
@@ -319,6 +320,12 @@ window.storage = {
           });
           localStorage.setItem('fin-v4', JSON.stringify({txns: mappedTxns}));
           console.log('✅ Loaded', mappedTxns.length, 'transactions from Supabase');
+          changed = true;
+          // Reload so App reads fresh data (prevent loop with sessionStorage)
+          if (!sessionStorage.getItem('__supa_reloaded__')) {
+            sessionStorage.setItem('__supa_reloaded__', '1');
+            setTimeout(function() { window.location.reload(); }, 400);
+          }
         }
       }
 
@@ -1141,7 +1148,7 @@ async function saveStorage(d) {
     // Save to localStorage immediately
     await window.storage.set(STORAGE_KEY, JSON.stringify(d));
     // Sync ALL modules to Supabase in background
-    // Use UPSERT to avoid race conditions
+    // Sync ppto and cuotasTC to Supabase
     var toSync = [];
     if (d && d.ppto)     toSync.push({ key: 'ppto',     value: JSON.stringify(d.ppto) });
     if (d && d.cuotasTC) toSync.push({ key: 'cuotasTC', value: JSON.stringify(d.cuotasTC) });
@@ -1155,7 +1162,7 @@ async function saveStorage(d) {
           'Prefer': 'resolution=merge-duplicates,return=minimal'
         },
         body: JSON.stringify({ key: item.key, value: item.value })
-      }).catch(function(e) { console.warn('Sync failed for ' + item.key + ':', e.message); });
+      }).catch(function(){});  // Silent fail - data is in localStorage
     });
   } catch(e) {
     console.warn('saveStorage error:', e.message);
@@ -3998,8 +4005,24 @@ function App() {
   const [ppto, setPpto] = useState([]);
   const [cuotasTC, setCuotasTC] = useState(CUOTAS_TC_INIT.map((c) => ({ ...c })));
   const [loaded, setLoaded] = useState(false);
-  const [month, setMonth] = useState(today.getMonth());
-  const [year, setYear] = useState(today.getFullYear());
+  const getInitialMonth = () => {
+    try {
+      var fin = JSON.parse(localStorage.getItem('fin-v4') || '{}');
+      var txnsList = Array.isArray(fin) ? fin : (fin.txns || []);
+      if (txnsList.length > 0) {
+        var dates = txnsList.map(function(t) { return t.fecha || ''; }).filter(Boolean).sort().reverse();
+        if (dates.length > 0) {
+          var parts = dates[0].split('-');
+          return { m: parseInt(parts[1]) - 1, y: parseInt(parts[0]) };
+        }
+      }
+    } catch(e) {}
+    var d = new Date(today); d.setMonth(d.getMonth() - 1);
+    return { m: d.getMonth(), y: d.getFullYear() };
+  };
+  var _im = getInitialMonth();
+  const [month, setMonth] = useState(_im.m);
+  const [year, setYear] = useState(_im.y);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [resetModal, setResetModal] = useState(false);
@@ -4114,9 +4137,11 @@ window.addEventListener('load', function() {
   // Check if this is a new device (no local data)
   var existing = localStorage.getItem('fin-v4');
   var parsed = existing ? JSON.parse(existing) : null;
+  // Check for data - fin-v4 can be array or {txns, ppto, ...}
   var hasTxns = parsed && (
     (Array.isArray(parsed) && parsed.length > 0) ||
-    (parsed.txns && parsed.txns.length > 0)
+    (parsed.txns && Array.isArray(parsed.txns) && parsed.txns.length > 0) ||
+    (parsed.ppto && Array.isArray(parsed.ppto) && parsed.ppto.length > 0)
   );
 
   if (!hasTxns) {
