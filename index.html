@@ -1123,8 +1123,17 @@ const REGLAS_COMERCIOS = []; // Load your rules via CSV in Comercios tab
 async function loadStorage() {
   try {
     const r = await window.storage.get(STORAGE_KEY);
-    return r?.value ? JSON.parse(r.value) : null;
-  } catch {
+    if (!r?.value) { console.log('loadStorage: no data in localStorage'); return null; }
+    const parsed = JSON.parse(r.value);
+    // Normalize: if flat array, wrap in {txns: [...]}
+    if (Array.isArray(parsed)) {
+      console.log('loadStorage: flat array with', parsed.length, 'items -> normalizing');
+      return { txns: parsed };
+    }
+    console.log('loadStorage: object with txns:', (parsed.txns||[]).length);
+    return parsed;
+  } catch(e) {
+    console.error('loadStorage error:', e.message);
   }
   return null;
 }
@@ -2555,7 +2564,21 @@ function AhorrosView({ txns }) {
   const [selTxn, setSelTxn] = useState(null);
   useEffect(() => {
     window.storage.get("ahorros_v1").then((r) => {
-      if (r?.value) setInversiones(JSON.parse(r.value));
+      if (r?.value) {
+        var loaded = JSON.parse(r.value);
+        // Recompute actual from historial to ensure consistency
+        loaded = loaded.map(function(a) {
+          var hist = a.historial || [];
+          if (hist.length > 0) {
+            var computed = hist.reduce(function(s, h) {
+              return s + (h.tipo === 'Retiro' ? -(h.monto||0) : (h.monto||0));
+            }, 0);
+            return Object.assign({}, a, { actual: computed });
+          }
+          return a;
+        });
+        setInversiones(loaded);
+      }
     }).catch(() => {
     });
   }, []);
