@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html><!-- v1778084690 -->
 <html lang="es">
 <head>
   <meta charset="UTF-8"/>
@@ -2887,8 +2887,8 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   ), manualModal && /* @__PURE__ */ React.createElement(Modal, { title: "Agregar transacci\xF3n manual", onClose: () => setManualModal(false), w: 460 }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Descripci\xF3n"), /* @__PURE__ */ React.createElement("input", { style: IS, value: mForm.desc || "", onChange: (e) => setMForm((f) => ({ ...f, desc: e.target.value })) })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fecha"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: mForm.fecha || "", onChange: (e) => setMForm((f) => ({ ...f, fecha: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Valor ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: mForm.valor || "", onChange: (e) => setMForm((f) => ({ ...f, valor: e.target.value })) }))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Tipo"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.tipo || "GASTO", onChange: (e) => setMForm((f) => ({ ...f, tipo: e.target.value })) }, /* @__PURE__ */ React.createElement("option", null, "GASTO"), /* @__PURE__ */ React.createElement("option", null, "INGRESO"))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Fuente"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.fuente || "Manual", onChange: (e) => setMForm((f) => ({ ...f, fuente: e.target.value })) }, ["Manual", "DEBITO", "TC RAPPI", "TC NU"].map((s) => /* @__PURE__ */ React.createElement("option", { key: s }, s))))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Categor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.cat || "", onChange: (e) => {
     const cat = e.target.value;
     setMForm((f) => ({ ...f, cat, sub: getMergedCats()[cat]?.subs?.[0] || "" }));
-  } }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), Object.keys(getMergedCats()).map((cat) => /* @__PURE__ */ React.createElement("option", { key: cat, value: cat }, cat)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Subcategor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.sub || "", onChange: (e) => setMForm((f) => ({ ...f, sub: e.target.value })) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), (getMergedCats()[mForm.cat]?.subs || []).map((s) => /* @__PURE__ */ React.createElement("option", { key: s, value: s }, s))))), /* @__PURE__ */ React.createElement(ColorPicker, { value: mForm.color || "#4A7B8C", onChange: (col) => setMForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: () => setManualModal(false) }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: addManual }, "Agregar"))))),
-  editCatModal && /* @__PURE__ */ React.createElement(Modal, { title: "Editar categor\xEDa", onClose: () => setEditCatModal(null), w: 400 },
+  } }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), Object.keys(getMergedCats()).map((cat) => /* @__PURE__ */ React.createElement("option", { key: cat, value: cat }, cat)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Subcategor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.sub || "", onChange: (e) => setMForm((f) => ({ ...f, sub: e.target.value })) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), (getMergedCats()[mForm.cat]?.subs || []).map((s) => /* @__PURE__ */ React.createElement("option", { key: s, value: s }, s))))), /* @__PURE__ */ React.createElement(ColorPicker, { value: mForm.color || "#4A7B8C", onChange: (col) => setMForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: () => setManualModal(false) }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: addManual }, "Agregar"))))
+  , editCatModal && /* @__PURE__ */ React.createElement(Modal, { title: "Editar categor\xEDa", onClose: () => setEditCatModal(null), w: 400 },
     /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 8, fontSize: 12, color: C.textL } },
       editCatModal.descripcion, " \xB7 ", editCatModal.fecha
     ),
@@ -2916,6 +2916,7 @@ function TransaccionesView({ txns, setTxns, month, year }) {
       )
     )
   )
+);
 }
 function PrestamosView({ txns }) {
   const [prestamos, setPrestamos] = useState([]);
@@ -4037,10 +4038,12 @@ function App() {
   }, []);
   useEffect(() => {
     loadStorage().then((data) => {
-      if (data?.ppto?.length) setPpto(data.ppto);
+      // Handle both array format [txns] and object format {txns, ppto, cuotasTC}
+      const dataObj = Array.isArray(data) ? { txns: data } : (data || {});
+      if (dataObj.ppto?.length) setPpto(dataObj.ppto);
       else setPpto(parsePPTO());
-      if (data?.txns?.length) setTxns(data.txns);
-      if (data?.cuotasTC?.length) setCuotasTC(data.cuotasTC);
+      if (dataObj.txns?.length) setTxns(dataObj.txns);
+      if (dataObj.cuotasTC?.length) setCuotasTC(dataObj.cuotasTC);
     }).catch(() => {
       setPpto(parsePPTO());
     }).finally(() => setLoaded(true));
