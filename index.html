@@ -1485,7 +1485,7 @@ function DashboardView({ txns, ppto, month, year }) {
   const fcTxns = useMemo(() => txnsMes.filter((t) => t.fuente === "DEBITO" || t.fuente === "D\xE9bito"), [txnsMes]);
   const fcPrev = useMemo(() => txnsPrev.filter((t) => t.fuente === "DEBITO" || t.fuente === "D\xE9bito"), [txnsPrev]);
   const fcEnt = fcTxns.filter((t) => t.tipo === "INGRESO").reduce((s, t) => s + Math.abs(t.valor), 0);
-  const fcSal = fcTxns.filter((t) => t.tipo === "GASTO").reduce((s, t) => s + Math.abs(t.valor), 0);
+  const fcSal = fcTxns.filter((t) => t.tipo === "GASTO" && !esInversion(t)).reduce((s, t) => s + Math.abs(t.valor), 0);
   const fcEntP = fcPrev.filter((t) => t.tipo === "INGRESO").reduce((s, t) => s + Math.abs(t.valor), 0);
   const fcSalP = fcPrev.filter((t) => t.tipo === "GASTO").reduce((s, t) => s + Math.abs(t.valor), 0);
   const ocTxns = useMemo(() => txnsMes.filter((t) => !esPagoTC(t) && !esInversion(t)), [txnsMes]);
@@ -1544,7 +1544,7 @@ function DashboardView({ txns, ppto, month, year }) {
     }
     return { mes: MESES[m].slice(0, 3), anio: y, ingresos: ingSrc.reduce((s, t) => s + Math.abs(t.valor), 0), gastos: gasSrc.reduce((s, t) => s + Math.abs(t.valor), 0), isCurr: m === month && y === year };
   }), [txns, month, year, evoModo, evoRango, evoCat]);
-  const topGastos = useMemo(() => [...txnsMes].filter((t) => t.tipo === "GASTO" && !esPagoTC(t)).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor)).slice(0, 5), [txnsMes]);
+  const topGastos = useMemo(() => [...txnsMes].filter((t) => t.tipo === "GASTO" && !esPagoTC(t) && !esInversion(t)).sort((a, b) => Math.abs(b.valor) - Math.abs(a.valor)).slice(0, 5), [txnsMes]);
   const maxEvo = Math.max(...evolucion.map((e) => Math.max(e.ingresos, e.gastos)), 1);
   const fcNeto = fcEnt - fcSal;
   const pptoEjec = pptoGas > 0 ? ocGas / pptoGas * 100 : 0;
@@ -2023,7 +2023,7 @@ function PresupuestoView({ ppto, setPpto, txns, setTxns, month, year }) {
     ))));
   }), addModal && /* @__PURE__ */ React.createElement(Modal, { title: "Agregar \xEDtem al presupuesto", onClose: () => setAddModal(null), w: 440 }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } }, /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Categor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: addForm.cat || "", onChange: (e) => {
     const cat = e.target.value;
-    setAddForm((f) => ({ ...f, cat, sub: getMergedCats()[cat]?.subs?.[0] || "" }));
+    setAddForm((f) => ({ ...f, cat, sub: getMergedCats()[cat]?.subs?.[0] || "", tipo: getMergedCats()[cat]?.tipo || "GASTO" }));
   } }, Object.keys(getMergedCats()).map((c) => /* @__PURE__ */ React.createElement("option", { key: c, value: c }, c)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Subcategor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: addForm.sub || "", onChange: (e) => setAddForm((f) => ({ ...f, sub: e.target.value })) }, (getMergedCats()[addForm.cat]?.subs || []).map((s) => /* @__PURE__ */ React.createElement("option", { key: s, value: s }, s))))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Descripci\xF3n"), /* @__PURE__ */ React.createElement("input", { style: IS, value: addForm.desc || "", onChange: (e) => setAddForm((f) => ({ ...f, desc: e.target.value })) })), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Valor ($)"), /* @__PURE__ */ React.createElement("input", { style: IS, type: "number", value: addForm.valor || "", onChange: (e) => setAddForm((f) => ({ ...f, valor: e.target.value })) })), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Tipo"), /* @__PURE__ */ React.createElement("select", { style: SS, value: addForm.tipo || "GASTO", onChange: (e) => setAddForm((f) => ({ ...f, tipo: e.target.value })) }, /* @__PURE__ */ React.createElement("option", null, "GASTO"), /* @__PURE__ */ React.createElement("option", null, "INGRESO")))), /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 } }, /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "M\xE9todo"), /* @__PURE__ */ React.createElement("select", { style: SS, value: addForm.metodo || "Efectivo", onChange: (e) => setAddForm((f) => ({ ...f, metodo: e.target.value })) }, ["Efectivo", "D\xE9bito", "Tarjeta", "Transferencia"].map((m) => /* @__PURE__ */ React.createElement("option", { key: m }, m)))), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", alignItems: "flex-end", paddingBottom: 4 } }, /* @__PURE__ */ React.createElement("label", { style: { display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, color: C.textM } }, /* @__PURE__ */ React.createElement("input", { type: "checkbox", checked: !!addForm.esCal, onChange: (e) => setAddForm((f) => ({ ...f, esCal: e.target.checked })) }), "Calendario"))), /* @__PURE__ */ React.createElement(ColorPicker, { value: addForm.color || "#506B52", onChange: (col) => setAddForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 4 } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: () => setAddModal(null) }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: addItem }, "Guardar")))), execModal && /* @__PURE__ */ React.createElement(ExecModal, { pptoId: execModal, ppto, txnsMes, onClose: () => setExecModal(null) }), assocModal && /* @__PURE__ */ React.createElement(Modal, { title: "Asociar transacci\xF3n al presupuesto", onClose: () => setAssocModal(null), w: 500 }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 12, color: C.textM, marginBottom: 12 } }, "Selecciona la transacci\xF3n real que corresponde a este \xEDtem presupuestal:"), unassocTxns.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { color: C.textL, fontSize: 13, textAlign: "center", padding: 20 } }, "No hay transacciones sin asociar en este mes."), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 4, maxHeight: 300, overflowY: "auto" } }, unassocTxns.map((t) => /* @__PURE__ */ React.createElement(
     "div",
     {
@@ -2613,8 +2613,13 @@ function AhorrosView({ txns }) {
     setAbonoTab("manual");
   }
   function saveForm() {
-    if (!form.nombre || !form.actual) return;
-    const item = { id: modal === "add" ? uid() : modal, nombre: form.nombre, meta: +(form.meta || form.actual), actual: +(form.actual || 0), tasa: +(form.tasa || 0), tipo: form.tipo || "Ahorro libre", vencimiento: form.vencimiento || "", color: form.color || C.amber, icon: form.icon || "piggy", historial: modal === "add" ? [] : (inversiones.find((x) => x.id === modal) || {}).historial || [] };
+    if (!form.nombre) return;
+    const existingHist = modal === "add" ? [] : (inversiones.find((x) => x.id === modal) || {}).historial || [];
+    // Recompute actual from historial; use form.actual only for new items or empty historial
+    const computedActual = existingHist.length > 0
+      ? existingHist.reduce((s, h) => s + (h.tipo === "Retiro" ? -(h.monto||0) : (h.monto||0)), 0)
+      : +(form.actual || 0);
+    const item = { id: modal === "add" ? uid() : modal, nombre: form.nombre, meta: +(form.meta || form.actual || 0), actual: computedActual, tasa: +(form.tasa || 0), tipo: form.tipo || "Ahorro libre", vencimiento: form.vencimiento || "", color: form.color || C.amber, icon: form.icon || "piggy", historial: existingHist };
     if (modal === "add") save([...inversiones, item]);
     else save(inversiones.map((a) => a.id === modal ? item : a));
     setModal(null);
