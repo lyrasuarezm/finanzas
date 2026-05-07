@@ -1795,14 +1795,16 @@ function PresupuestoView({ ppto, setPpto, txns, setTxns, month, year }) {
     const { cat, sub, desc, valor, tipo, metodo, esCal } = addForm;
     if (!cat || !sub || !valor) return;
     const doAdd = (toAll) => {
+      // Derive tipo from categoria to ensure correctness
+      const realTipo = getMergedCats()[cat]?.tipo === "INGRESO" ? "INGRESO" : (tipo || "GASTO");
       const newItem = {
         id: uid(),
         fecha: `${year}-${String(month + 1).padStart(2, "0")}-01`,
         categoria: cat,
         subcategoria: sub,
         descripcion: desc || sub,
-        valor: parseFloat(valor) * (tipo === "GASTO" ? -1 : 1),
-        tipo: tipo || "GASTO",
+        valor: parseFloat(valor) * (realTipo === "GASTO" ? -1 : 1),
+        tipo: realTipo,
         metodo: metodo || "Efectivo",
         esCalendario: !!esCal,
         estado: "Pendiente",
@@ -4069,8 +4071,17 @@ function App() {
     loadStorage().then((data) => {
       // Handle both array format [txns] and object format {txns, ppto, cuotasTC}
       const dataObj = Array.isArray(data) ? { txns: data } : (data || {});
-      if (dataObj.ppto?.length) setPpto(dataObj.ppto);
-      else setPpto(parsePPTO());
+      if (dataObj.ppto?.length) {
+        // Fix existing ppto items where cat=Ingresos but tipo=GASTO
+        var fixedPpto = dataObj.ppto.map(function(p) {
+          var allCats = getMergedCats();
+          if (allCats[p.categoria]?.tipo === 'INGRESO' && p.tipo !== 'INGRESO') {
+            return Object.assign({}, p, { tipo: 'INGRESO', valor: Math.abs(p.valor) });
+          }
+          return p;
+        });
+        setPpto(fixedPpto);
+      } else setPpto(parsePPTO());
       if (dataObj.txns?.length) setTxns(dataObj.txns);
       if (dataObj.cuotasTC?.length) setCuotasTC(dataObj.cuotasTC);
     }).catch(() => {
