@@ -1475,11 +1475,36 @@ function DashboardView({ txns, ppto, month, year }) {
   const [evoCat, setEvoCat] = useState("Todas");
   const enMes = (t, m, y) => {
     const p = t.fecha?.split("-") || [];
-    return parseInt(p[0]) === y && parseInt(p[1]) === m + 1;
+    const ty = parseInt(p[0]), tm = parseInt(p[1]) - 1, td = parseInt(p[2]);
+    // Ingreso on last 3 days of month -> counts for NEXT month, not own month
+    if (t.tipo === "INGRESO" && td >= 28) {
+      const nextM = tm === 11 ? 0 : tm + 1;
+      const nextY = tm === 11 ? ty + 1 : ty;
+      return (nextY === y && nextM === m);
+    }
+    // Normal: exact month match
+    return ty === y && tm === m;
   };
   const prevMonth = month === 0 ? 11 : month - 1;
   const prevYear = month === 0 ? year - 1 : year;
-  const txnsMes = useMemo(() => txns.filter((t) => enMes(t, month, year)), [txns, month, year]);
+  const txnsMes = useMemo(() => {
+    // End-of-month income rule: INGRESO txns on days >= 25 count in NEXT month
+    // e.g. salary paid Apr 30 → shows as May income
+    var prevM = month === 0 ? 11 : month - 1;
+    var prevY = month === 0 ? year - 1 : year;
+    return txns.filter((t) => {
+      var p = (t.fecha || "").split("-");
+      var tYear = parseInt(p[0]);
+      var tMonth = parseInt(p[1]) - 1;
+      var tDay = parseInt(p[2]);
+      var isEndOfMonthIngreso = t.tipo === "INGRESO" && tDay >= 25;
+      // This month's txns, EXCEPT end-of-month ingreso (those go to next month)
+      if (tYear === year && tMonth === month && !isEndOfMonthIngreso) return true;
+      // Prev month's end-of-month ingresos count HERE (in current month)
+      if (isEndOfMonthIngreso && tYear === prevY && tMonth === prevM) return true;
+      return false;
+    });
+  }, [txns, month, year]);
   const txnsPrev = useMemo(() => txns.filter((t) => enMes(t, prevMonth, prevYear)), [txns, prevMonth, prevYear]);
   const pptoMes = useMemo(() => getPptoMes(ppto, month, year), [ppto, month, year]);
   const fcTxns = useMemo(() => txnsMes.filter((t) => t.fuente === "DEBITO" || t.fuente === "D\xE9bito"), [txnsMes]);
@@ -2818,14 +2843,18 @@ function TransaccionesView({ txns, setTxns, month, year }) {
     }));
   }
   function openEditCat(t) {
-    setEditCatForm({ cat: t.categoria || "", sub: t.subcategoria || "" });
+    setEditCatForm({ cat: t.categoria || "", sub: t.subcategoria || "", fecha: t.fecha || "" });
     setEditCatModal(t);
   }
   function saveEditCat() {
     if (!editCatModal) return;
     setTxns((prev) => prev.map((t) =>
       t.id === editCatModal.id
-        ? Object.assign({}, t, { categoria: editCatForm.cat, subcategoria: editCatForm.sub })
+        ? Object.assign({}, t, { 
+            categoria: editCatForm.cat, 
+            subcategoria: editCatForm.sub,
+            fecha: editCatForm.fecha || t.fecha
+          })
         : t
     ));
     setEditCatModal(null);
@@ -2919,11 +2948,15 @@ function TransaccionesView({ txns, setTxns, month, year }) {
     const cat = e.target.value;
     setMForm((f) => ({ ...f, cat, sub: getMergedCats()[cat]?.subs?.[0] || "" }));
   } }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), Object.keys(getMergedCats()).map((cat) => /* @__PURE__ */ React.createElement("option", { key: cat, value: cat }, cat)))), /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement(Lbl, null, "Subcategor\xEDa"), /* @__PURE__ */ React.createElement("select", { style: SS, value: mForm.sub || "", onChange: (e) => setMForm((f) => ({ ...f, sub: e.target.value })) }, /* @__PURE__ */ React.createElement("option", { value: "" }, "-- Seleccionar --"), (getMergedCats()[mForm.cat]?.subs || []).map((s) => /* @__PURE__ */ React.createElement("option", { key: s, value: s }, s))))), /* @__PURE__ */ React.createElement(ColorPicker, { value: mForm.color || "#4A7B8C", onChange: (col) => setMForm((f) => ({ ...f, color: col })) }), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: () => setManualModal(false) }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: addManual }, "Agregar"))))
-  , editCatModal && /* @__PURE__ */ React.createElement(Modal, { title: "Editar categor\xEDa", onClose: () => setEditCatModal(null), w: 400 },
+  , editCatModal && /* @__PURE__ */ React.createElement(Modal, { title: "Editar transacci\xF3n", onClose: () => setEditCatModal(null), w: 400 },
     /* @__PURE__ */ React.createElement("div", { style: { marginBottom: 8, fontSize: 12, color: C.textL } },
-      editCatModal.descripcion, " \xB7 ", editCatModal.fecha
+      editCatModal.descripcion
     ),
     /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 12 } },
+      /* @__PURE__ */ React.createElement("div", null,
+        /* @__PURE__ */ React.createElement(Lbl, null, "Fecha"),
+        /* @__PURE__ */ React.createElement("input", { style: IS, type: "date", value: editCatForm.fecha || editCatModal.fecha || "", onChange: (e) => setEditCatForm((f) => ({ ...f, fecha: e.target.value })) })
+      ),
       /* @__PURE__ */ React.createElement("div", null,
         /* @__PURE__ */ React.createElement(Lbl, null, "Categor\xEDa"),
         /* @__PURE__ */ React.createElement("select", { style: SS, value: editCatForm.cat, onChange: (e) => {
