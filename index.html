@@ -302,11 +302,11 @@ window.storage = {
         // Check if this device already has data
         var existing = localStorage.getItem('fin-v4');
         var parsed = existing ? JSON.parse(existing) : null;
-        var hasTxns = parsed && (
-          (Array.isArray(parsed) && parsed.length > 0) ||
-          (parsed.txns && Array.isArray(parsed.txns) && parsed.txns.length > 0) ||
-          (parsed.ppto && Array.isArray(parsed.ppto) && parsed.ppto.length > 0)
-        );
+        var localTxns = parsed ? (Array.isArray(parsed) ? parsed : (parsed.txns || [])) : [];
+        var hasTxns = localTxns.length > 0 ||
+          (parsed && parsed.ppto && Array.isArray(parsed.ppto) && parsed.ppto.length > 0);
+        // If Supabase has MORE txns than local, update local
+        var shouldUpdateTxns = !hasTxns || txns.length > localTxns.length;
         if (!hasTxns) {
           // New device - load from Supabase
           var mappedTxns = txns.map(function(t) {
@@ -1156,23 +1156,44 @@ async function saveStorage(d) {
   try {
     // Save to localStorage immediately
     await window.storage.set(STORAGE_KEY, JSON.stringify(d));
-    // Sync ALL modules to Supabase in background
-    // Sync ppto and cuotasTC to Supabase
+    var headers = {
+      'apikey': SUPA_KEY,
+      'Authorization': 'Bearer ' + SUPA_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates,return=minimal'
+    };
+    // Sync ppto and cuotasTC to Supabase config table
     var toSync = [];
     if (d && d.ppto)     toSync.push({ key: 'ppto',     value: JSON.stringify(d.ppto) });
     if (d && d.cuotasTC) toSync.push({ key: 'cuotasTC', value: JSON.stringify(d.cuotasTC) });
     toSync.forEach(function(item) {
       fetch(SUPA_URL + '/rest/v1/config', {
-        method: 'POST',
-        headers: {
-          'apikey': SUPA_KEY,
-          'Authorization': 'Bearer ' + SUPA_KEY,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates,return=minimal'
-        },
+        method: 'POST', headers: headers,
         body: JSON.stringify({ key: item.key, value: item.value })
-      }).catch(function(){});  // Silent fail - data is in localStorage
+      }).catch(function(){});
     });
+    // Sync txns to Supabase txns table (upsert all)
+    if (d && d.txns && d.txns.length > 0) {
+      var txnsPayload = d.txns.map(function(t) {
+        return {
+          id: t.id, fecha: t.fecha, tipo: t.tipo,
+          categoria: t.categoria || '', subcategoria: t.subcategoria || '',
+          descripcion: t.descripcion || '', valor: t.valor || 0,
+          metodo: t.metodo || 'Efectivo', estado: t.estado || 'Pagado',
+          fuente: t.fuente || 'Manual', es_calendario: !!t.esCalendario
+        };
+      });
+      // Batch in chunks of 200 to avoid payload limits
+      var chunkSize = 200;
+      for (var ci = 0; ci < txnsPayload.length; ci += chunkSize) {
+        var chunk = txnsPayload.slice(ci, ci + chunkSize);
+        fetch(SUPA_URL + '/rest/v1/txns', {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(chunk)
+        }).catch(function(){});
+      }
+    }
   } catch(e) {
     console.warn('saveStorage error:', e.message);
   }
