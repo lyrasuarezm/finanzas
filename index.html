@@ -306,26 +306,35 @@ window.storage = {
         var hasTxns = localTxns.length > 0 ||
           (parsed && parsed.ppto && Array.isArray(parsed.ppto) && parsed.ppto.length > 0);
         // If Supabase has MORE txns than local, update local
-        var shouldUpdateTxns = !hasTxns || txns.length > localTxns.length;
-        if (!hasTxns) {
-          // New device - load from Supabase
-          var mappedTxns = txns.map(function(t) {
-            return {
-              id: t.id, fecha: t.fecha, tipo: t.tipo,
-              categoria: t.categoria, subcategoria: t.subcategoria,
-              descripcion: t.descripcion, valor: t.valor,
-              metodo: t.metodo, estado: t.estado,
-              fuente: t.fuente, esCalendario: t.es_calendario
-            };
-          });
-          localStorage.setItem('fin-v4', JSON.stringify({txns: mappedTxns}));
-          console.log('✅ Loaded', mappedTxns.length, 'transactions from Supabase');
+        // Always use Supabase as source of truth for txns
+        // Map Supabase txns to app format
+        var mappedTxns = txns.map(function(t) {
+          return {
+            id: t.id, fecha: t.fecha, tipo: t.tipo,
+            categoria: t.categoria, subcategoria: t.subcategoria,
+            descripcion: t.descripcion, valor: t.valor,
+            metodo: t.metodo, estado: t.estado,
+            fuente: t.fuente, esCalendario: t.es_calendario
+          };
+        });
+        // Merge: keep local txns not in Supabase (newly added, not yet synced)
+        var supaIds = new Set(mappedTxns.map(function(t) { return t.id; }));
+        var onlyLocal = localTxns.filter(function(t) { return !supaIds.has(t.id); });
+        var mergedTxns = mappedTxns.concat(onlyLocal);
+        // Only update localStorage if data differs (avoid unnecessary reloads)
+        var localCount = localTxns.length;
+        var remoteCount = mergedTxns.length;
+        var needsUpdate = !hasTxns || remoteCount !== localCount || txns.length !== localCount;
+        if (needsUpdate) {
+          var fin = JSON.parse(localStorage.getItem('fin-v4') || '{}');
+          if (Array.isArray(fin)) fin = {};
+          fin.txns = mergedTxns;
+          localStorage.setItem('fin-v4', JSON.stringify(fin));
+          console.log('✅ Synced', mergedTxns.length, 'transactions from Supabase (was', localCount, ')');
           changed = true;
-          // Reload so App reads fresh data (prevent loop with sessionStorage)
-          if (!sessionStorage.getItem('__supa_reloaded__')) {
-            sessionStorage.setItem('__supa_reloaded__', '1');
-            setTimeout(function() { window.location.reload(); }, 400);
-          }
+          // Data updated in localStorage - no reload needed
+          // The app will be mounted with fresh data after loadFromSupabase completes
+          console.log('✅ localStorage updated with Supabase data');
         }
       }
 
@@ -4255,13 +4264,19 @@ window.addEventListener('load', function() {
       }
     });
   } else {
-    // Existing device - mount immediately with local data
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(App));
-    // Sync ppto from Supabase so budget changes are shared
+    // Existing device - sync from Supabase first, then mount
+    // Clear reload guard so we can reload if needed
+    sessionStorage.removeItem('__supa_reloaded__');
     window.storage.loadFromSupabase().then(function(ok) {
+      // Mount app after sync (uses fresh localStorage data)
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(App));
       if (ok) console.log('Supabase sync complete');
-    }).catch(function(){});
+    }).catch(function() {
+      // Supabase failed - mount with local data
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(App));
+    });
   }
 });
 </script>
