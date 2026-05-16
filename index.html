@@ -2733,6 +2733,32 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   const [manualModal, setManualModal] = useState(false);
   const [mForm, setMForm] = useState({ tipo: "GASTO", fuente: "Manual", metodo: "Efectivo" });
   const [editCatModal, setEditCatModal] = useState(null);
+  const [showHistorial, setShowHistorial] = useState(false);
+  const [importHistorial, setImportHistorial] = useState([]);
+  // Load import history from storage on mount
+  useEffect(() => {
+    window.storage.get("importaciones_v1").then(function(r) {
+      if (r && r.value) setImportHistorial(JSON.parse(r.value));
+    }).catch(function(){});
+  }, []);
+  function saveImportHistorial(list) {
+    setImportHistorial(list);
+    window.storage.set("importaciones_v1", JSON.stringify(list));
+  }
+  function registrarImportacion(nombre, total, nuevas, duplicadas, fuente) {
+    var entry = {
+      id: "imp_" + Date.now(),
+      fecha: new Date().toISOString().slice(0,10),
+      hora: new Date().toTimeString().slice(0,5),
+      nombre: nombre,
+      total: total,
+      nuevas: nuevas,
+      duplicadas: duplicadas,
+      fuente: fuente || "Manual"
+    };
+    var list = [entry, ...importHistorial].slice(0, 50); // keep last 50
+    saveImportHistorial(list);
+  }
   const [editCatForm, setEditCatForm] = useState({ cat: "", sub: "" });
   const fileRef = useRef();
   const txnsMes = useMemo(() => txns.filter((t) => {
@@ -2810,6 +2836,8 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   function handleFile(e) {
     const file = e.target.files[0];
     if (!file) return;
+    // Store filename for history
+    if (fileRef.current) fileRef.current._lastName = file.name;
     e.target.value = "";
     const isXLSX = file.name.endsWith(".xlsx") || file.name.endsWith(".xls");
     if (isXLSX) {
@@ -2817,7 +2845,8 @@ function TransaccionesView({ txns, setTxns, month, year }) {
         const reader = new FileReader();
         reader.onload = (ev) => {
           const rows = parseBancolombiaXLSX(ev.target.result);
-          setCsvPreview(rows.length > 0 ? rows : null);
+          if (fileRef.current) fileRef.current._lastName = file.name;
+        setCsvPreview(rows.length > 0 ? rows : null);
           if (rows.length === 0) alert("No se encontraron transacciones en el archivo XLSX.");
         };
         reader.readAsArrayBuffer(file);
@@ -2841,7 +2870,8 @@ function TransaccionesView({ txns, setTxns, month, year }) {
     }
   }
   function confirmCSV() {
-    setDupModal({ incoming: csvPreview || [] });
+    var nombre = (fileRef.current && fileRef.current._lastName) || "Archivo CSV";
+    setDupModal({ incoming: csvPreview || [], nombre });
     setCsvPreview(null);
   }
   function addManual() {
@@ -2892,10 +2922,46 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   const totalIng = filtered.filter((t) => t.tipo === "INGRESO").reduce((s, t) => s + t.valor, 0);
   const totalGas = filtered.filter((t) => t.tipo === "GASTO").reduce((s, t) => s + t.valor, 0);
   const cats = ["Todas", ...Object.keys(getMergedCats())];
-  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "relative", flex: 1, minWidth: 180 } }, /* @__PURE__ */ React.createElement("input", { style: { ...IS, paddingLeft: 34 }, placeholder: "Buscar...", value: search, onChange: (e) => setSearch(e.target.value) }), /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, /* @__PURE__ */ React.createElement(Ico, { name: "search", size: 14, color: C.textL }))), /* @__PURE__ */ React.createElement("select", { style: { ...SS, width: 150 }, value: filterCat, onChange: (e) => setFilterCat(e.target.value) }, cats.map((cat) => /* @__PURE__ */ React.createElement("option", { key: cat }, cat))), /* @__PURE__ */ React.createElement("select", { style: { ...SS, width: 130 }, value: filterFuente, onChange: (e) => setFilterFuente(e.target.value) }, ["Todas", "DEBITO", "TC RAPPI", "TC NU", "Manual"].map((f) => /* @__PURE__ */ React.createElement("option", { key: f, value: f }, f === "Todas" ? "Todas las fuentes" : f))), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.xlsx,.xls", style: { display: "none" }, onChange: handleFile }), /* @__PURE__ */ React.createElement(Btn, { onClick: () => fileRef.current?.click() }, /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(Ico, { name: "upload", size: 14, color: "#fff" }), "Cargar archivo")), /* @__PURE__ */ React.createElement(Btn, { variant: "outline", onClick: () => {
+  return /* @__PURE__ */ React.createElement("div", null, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", alignItems: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { position: "relative", flex: 1, minWidth: 180 } }, /* @__PURE__ */ React.createElement("input", { style: { ...IS, paddingLeft: 34 }, placeholder: "Buscar...", value: search, onChange: (e) => setSearch(e.target.value) }), /* @__PURE__ */ React.createElement("div", { style: { position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)" } }, /* @__PURE__ */ React.createElement(Ico, { name: "search", size: 14, color: C.textL }))), /* @__PURE__ */ React.createElement("select", { style: { ...SS, width: 150 }, value: filterCat, onChange: (e) => setFilterCat(e.target.value) }, cats.map((cat) => /* @__PURE__ */ React.createElement("option", { key: cat }, cat))), /* @__PURE__ */ React.createElement("select", { style: { ...SS, width: 130 }, value: filterFuente, onChange: (e) => setFilterFuente(e.target.value) }, ["Todas", "DEBITO", "TC RAPPI", "TC NU", "Manual"].map((f) => /* @__PURE__ */ React.createElement("option", { key: f, value: f }, f === "Todas" ? "Todas las fuentes" : f))), /* @__PURE__ */ React.createElement("input", { ref: fileRef, type: "file", accept: ".csv,.xlsx,.xls", style: { display: "none" }, onChange: handleFile }), /* @__PURE__ */ React.createElement(Btn, { onClick: () => fileRef.current?.click() }, /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(Ico, { name: "upload", size: 14, color: "#fff" }), "Cargar archivo")),
+  /* @__PURE__ */ React.createElement("button", { onClick: () => setShowHistorial(!showHistorial), style: { border: `1px solid ${C.border}`, background: showHistorial ? C.borderL : C.card, borderRadius: 14, padding: "10px 16px", fontSize: 13, fontWeight: 600, cursor: "pointer", color: C.textM, display: "flex", alignItems: "center", gap: 6 } }, /* @__PURE__ */ React.createElement(Ico, { name: "barChart", size: 14, color: C.textM }), "Historial", importHistorial.length > 0 && /* @__PURE__ */ React.createElement("span", { style: { background: "#1A2521", color: "#C9A87C", borderRadius: 99, fontSize: 10, fontWeight: 700, padding: "1px 7px", marginLeft: 2 } }, importHistorial.length)), /* @__PURE__ */ React.createElement(Btn, { variant: "outline", onClick: () => {
     setMForm({ tipo: "GASTO", fuente: "Manual", metodo: "Efectivo", fecha: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10) });
     setManualModal(true);
-  } }, /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement(Ico, { name: "plus", size: 13, color: C.blue }), "Manual"))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textL, marginBottom: 12, padding: "8px 12px", background: C.borderL, borderRadius: 10 } }, "Soporta: ", /* @__PURE__ */ React.createElement("strong", null, "CSV de la app"), " (separado por ;) \xB7 ", /* @__PURE__ */ React.createElement("strong", null, "XLSX de Bancolombia"), " (Movimientos de cuenta)"), csvPreview && /* @__PURE__ */ React.createElement("div", { style: { background: "#FBF5E8", border: "1px solid #C9A87C", borderRadius: 14, padding: 16, marginBottom: 16 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 } }, csvPreview.length, " transacciones \xB7 ", csvPreview.filter((t) => !t.subcategoria).length, " sin clasificar"), csvPreview.filter((t) => !t.subcategoria).slice(0, 6).map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, style: { background: C.card, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, flex: 1, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.descripcion), /* @__PURE__ */ React.createElement(
+  } }, /* @__PURE__ */ React.createElement("span", { style: { display: "flex", alignItems: "center", gap: 4 } }, /* @__PURE__ */ React.createElement(Ico, { name: "plus", size: 13, color: C.blue }), "Manual"))), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textL, marginBottom: 12, padding: "8px 12px", background: C.borderL, borderRadius: 10 } }, "Soporta: ", /* @__PURE__ */ React.createElement("strong", null, "CSV de la app"), " (separado por ;) \xB7 ", /* @__PURE__ */ React.createElement("strong", null, "XLSX de Bancolombia"), " (Movimientos de cuenta)"),
+  showHistorial && /* @__PURE__ */ React.createElement("div", { style: { background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, marginBottom: 16, overflow: "hidden" } },
+    /* @__PURE__ */ React.createElement("div", { style: { padding: "14px 18px", borderBottom: `1px solid ${C.borderL}`, display: "flex", alignItems: "center", justifyContent: "space-between" } },
+      /* @__PURE__ */ React.createElement("div", { style: { fontSize: 14, fontWeight: 700, color: C.text } }, "Historial de importaciones"),
+      /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, alignItems: "center" } },
+        importHistorial.length > 0 && /* @__PURE__ */ React.createElement("span", { style: { fontSize: 11, color: C.textL } }, importHistorial.length, " archivo", importHistorial.length !== 1 ? "s" : ""),
+        importHistorial.length > 0 && /* @__PURE__ */ React.createElement("button", { onClick: () => { if (window.confirm("\xBFBorrar todo el historial?")) saveImportHistorial([]); }, style: { border: "none", background: "transparent", cursor: "pointer", padding: 4, opacity: 0.5, display: "flex", alignItems: "center" }, onMouseEnter: e => e.currentTarget.style.opacity="1", onMouseLeave: e => e.currentTarget.style.opacity=".5" }, /* @__PURE__ */ React.createElement(Ico, { name: "trash", size: 13, color: C.red }))
+      )
+    ),
+    importHistorial.length === 0
+      ? /* @__PURE__ */ React.createElement("div", { style: { padding: "32px 18px", textAlign: "center", color: C.textL, fontSize: 13 } }, "No hay importaciones registradas todav\xEDa.")
+      : /* @__PURE__ */ React.createElement("div", { style: { maxHeight: 340, overflowY: "auto" } },
+          /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "auto 1fr auto auto auto auto", gap: 0, fontSize: 11 } },
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" } }, "Fecha"),
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" } }, "Archivo"),
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", textAlign: "center" } }, "Total"),
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", textAlign: "center" } }, "Nuevas"),
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", textAlign: "center" } }, "Duplic."),
+            /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" } }, "Fuente"),
+            ...importHistorial.map(function(imp, idx) {
+              var isEven = idx % 2 === 0;
+              var bg = isEven ? C.card : C.borderL + "88";
+              var allNew = imp.duplicadas === 0;
+              return [
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_d", style: { padding: "9px 14px", background: bg, color: C.textM, fontSize: 11, borderBottom: `1px solid ${C.borderL}`, whiteSpace: "nowrap" } }, imp.fecha, /* @__PURE__ */ React.createElement("span", { style: { color: C.textL, marginLeft: 4, fontSize: 10 } }, imp.hora)),
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_n", style: { padding: "9px 14px", background: bg, color: C.text, fontSize: 11, borderBottom: `1px solid ${C.borderL}`, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 200 } }, imp.nombre),
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_t", style: { padding: "9px 14px", background: bg, color: C.textM, textAlign: "center", borderBottom: `1px solid ${C.borderL}`, fontWeight: 600 } }, imp.total),
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_nv", style: { padding: "9px 14px", background: bg, color: C.green, textAlign: "center", borderBottom: `1px solid ${C.borderL}`, fontWeight: 700 } }, "+", imp.nuevas),
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_dup", style: { padding: "9px 14px", background: bg, color: imp.duplicadas > 0 ? C.amber : C.textL, textAlign: "center", borderBottom: `1px solid ${C.borderL}` } }, imp.duplicadas > 0 ? imp.duplicadas : "—"),
+                /* @__PURE__ */ React.createElement("div", { key: imp.id+"_f", style: { padding: "9px 14px", background: bg, borderBottom: `1px solid ${C.borderL}` } },
+                  /* @__PURE__ */ React.createElement("span", { style: { fontSize: 10, background: imp.fuente === "DEBITO" ? "#E8F0E8" : imp.fuente.includes("TC") ? "#F2EBE4" : "#F0F0F0", color: imp.fuente === "DEBITO" ? C.green : imp.fuente.includes("TC") ? "#6B4F3A" : "#6B6B6B", padding: "2px 8px", borderRadius: 99, fontWeight: 600 } }, imp.fuente))
+              ];
+            })
+          )
+        )
+  ), csvPreview && /* @__PURE__ */ React.createElement("div", { style: { background: "#FBF5E8", border: "1px solid #C9A87C", borderRadius: 14, padding: 16, marginBottom: 16 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 10 } }, csvPreview.length, " transacciones \xB7 ", csvPreview.filter((t) => !t.subcategoria).length, " sin clasificar"), csvPreview.filter((t) => !t.subcategoria).slice(0, 6).map((t) => /* @__PURE__ */ React.createElement("div", { key: t.id, style: { background: C.card, borderRadius: 10, padding: "8px 12px", marginBottom: 6, display: "flex", gap: 8, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", { style: { fontSize: 12, flex: 1, color: C.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.descripcion), /* @__PURE__ */ React.createElement(
     "select",
     {
       style: { ...SS, width: 180, fontSize: 11, padding: "4px 8px" },
@@ -2956,6 +3022,13 @@ function TransaccionesView({ txns, setTxns, month, year }) {
       existing: txns,
       onImportNew: function(nuevas) {
         setTxns((prev) => [...prev, ...nuevas]);
+        if (dupModal && dupModal.incoming) {
+          var total = dupModal.incoming.length;
+          var dups = total - nuevas.length;
+          var fuente = (nuevas[0] && nuevas[0].fuente) || "Manual";
+          var nombre = dupModal.nombre || "Archivo";
+          registrarImportacion(nombre, total, nuevas.length, dups, fuente);
+        }
         setDupModal(null);
       },
       onImportAll: function(all) {
@@ -2968,6 +3041,11 @@ function TransaccionesView({ txns, setTxns, month, year }) {
           return true;
         });
         setTxns((prev) => [...prev, ...deduped]);
+        if (dupModal && dupModal.incoming) {
+          var fuente2 = (all[0] && all[0].fuente) || "Manual";
+          var nombre2 = dupModal.nombre || "Archivo";
+          registrarImportacion(nombre2, dupModal.incoming.length, deduped.length, 0, fuente2);
+        }
         setDupModal(null);
       },
       onCancel: function() {
@@ -3827,6 +3905,7 @@ function parsePDFText(fullText, fileNameHint) {
   function handleFile(e) {
     var file = e.target.files[0];
     if (!file) return;
+    window.__lastImportFile = file.name;
     e.target.value = "";
     setPdfFile(null);
     setPdfPwd("");
@@ -3976,7 +4055,7 @@ function parsePDFText(fullText, fileNameHint) {
       incoming: dupCheck.incoming,
       existing: txns || [],
       onImportNew: function(nuevas) {
-        onImport(nuevas);
+        onImport(nuevas, dupCheck.incoming.length, nuevas.length, dupCheck.incoming.length - nuevas.length);
         onClose();
       },
       onImportAll: function(all) {
@@ -3987,7 +4066,7 @@ function parsePDFText(fullText, fileNameHint) {
           seenNew.add(k);
           return true;
         });
-        onImport(deduped);
+        onImport(deduped, dupCheck.incoming.length, deduped.length, 0);
         onClose();
       },
       onCancel: function() {
@@ -4183,8 +4262,27 @@ function App() {
   const pendientesMes = ppto.filter(
     (p) => p.esCalendario && p.mes === month + 1 && p.anio === year && p.estado === "Pendiente" && p.tipo === "GASTO"
   ).length;
-  function handleImport(nuevas) {
+  function handleImport(nuevas, total, nuevasCount, dups) {
     setTxns((prev) => [...prev, ...nuevas]);
+    // Register in import history
+    try {
+      var fuente = (nuevas[0] && nuevas[0].fuente) || "Manual";
+      var entry = {
+        id: "imp_" + Date.now(),
+        fecha: new Date().toISOString().slice(0,10),
+        hora: new Date().toTimeString().slice(0,5),
+        nombre: window.__lastImportFile || "Extracto",
+        total: total || nuevas.length,
+        nuevas: nuevasCount !== undefined ? nuevasCount : nuevas.length,
+        duplicadas: dups || 0,
+        fuente: fuente
+      };
+      window.storage.get("importaciones_v1").then(function(r) {
+        var list = r && r.value ? JSON.parse(r.value) : [];
+        list = [entry, ...list].slice(0, 50);
+        window.storage.set("importaciones_v1", JSON.stringify(list));
+      }).catch(function(){});
+    } catch(e) {}
   }
   if (!loaded) {
     return /* @__PURE__ */ React.createElement("div", { style: { height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: C.bg, fontFamily: "DM Sans,sans-serif" } }, /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 52, height: 52, borderRadius: 16, background: "#1A2521", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" } }, /* @__PURE__ */ React.createElement(Ico, { name: "wallet", size: 24, color: "#C9A87C" })), /* @__PURE__ */ React.createElement("div", { style: { color: C.textL, fontSize: 14 } }, "Cargando...")));
