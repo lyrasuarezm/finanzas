@@ -271,6 +271,8 @@ window.storage = {
       } else if (key === 'prestamos_v1') {
         await supaFetch('config?key=eq.prestamos', 'DELETE');
         await supaFetch('config', 'POST', {key: 'prestamos', value: value});
+      } else if (key === 'importaciones_v1') {
+        fetch(SUPA_URL + '/rest/v1/config', { method:'POST', headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates,return=minimal'}, body: JSON.stringify({key:'importaciones', value:value}) }).catch(function(){});
       }
     } catch(e) { console.warn('Supabase write failed (saved locally):', e.message); }
     return { key, value };
@@ -350,6 +352,7 @@ window.storage = {
             try { window.__customRules = JSON.parse(row.value); } catch(e) {}
           }
           if (row.key === 'cats')      localStorage.setItem('cats_custom_v1', row.value);
+          if (row.key === 'importaciones') localStorage.setItem('importaciones_v1', row.value);
           if (row.key === 'ppto' || row.key === 'cuotasTC') {
             try {
               var parsed = JSON.parse(row.value);
