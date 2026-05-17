@@ -35,16 +35,30 @@ input,select,textarea{font-size:16px!important}
 
 /* Mobile grid fixes */
 @media(max-width:640px){
-  /* KPI 3-col → 1-col */
-  [style*="repeat(3,1fr)"],[style*="repeat(3, 1fr)"]{ 
-    grid-template-columns:1fr!important;
-  }
-  /* 2-col invest cards → 1-col on very small */
+  /* 3-col → 1-col */
+  [style*="repeat(3,1fr)"],[style*="repeat(3, 1fr)"]{ grid-template-columns:1fr!important; }
+  /* 2-col → 1-col */
+  [style*="1fr 1fr"]{ grid-template-columns:1fr!important; }
+  /* Donut chart row → stack */
+  [style*="160px 1fr"]{ grid-template-columns:1fr!important; }
+  /* Padding reducido en contenido principal */
+  [style*="padding: 20px 16px"]{ padding:10px 10px 8px!important; }
+  /* Modales full width */
+  [style*="width: 400px"],[style*="w: 400"]{width:calc(100vw - 24px)!important;max-width:100%!important;}
+  /* Texto largo sin overflow */
+  * { word-break:break-word; }
+  /* Scroll horizontal en tablas */
+  .mob-scroll { overflow-x:auto!important;-webkit-overflow-scrolling:touch; }
+  /* Columna duplicadas oculta en historial */
+  .hist-dup{ display:none!important; }
+  /* Header padding */
+  [style*="padding: 10px 20px"]{ padding:8px 12px!important; }
 }
 @media(max-width:400px){
-  [style*="1fr 1fr"]{
-    grid-template-columns:1fr!important;
-  }
+  /* 4-col → 2-col (inversiones, TC) */
+  [style*="repeat(4,1fr)"],[style*="repeat(4, 1fr)"]{ grid-template-columns:repeat(2,1fr)!important; }
+  /* Nav labels más pequeños */
+  [style*="fontSize: 9px"]{ font-size:8px!important; }
 }
 /* Bottom nav safe area */
 nav, [role="navigation"]{
@@ -214,6 +228,8 @@ const useRef = React.useRef;
 
 const SUPA_URL = 'https://gfrbhrfjydofxapnfbxx.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdmcmJocmZqeWRvZnhhcG5mYnh4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODcwNTQsImV4cCI6MjA5MjI2MzA1NH0.XBw9Wmig7houy913uHSKRb0TaHHRbQdht8I5qTm5vhQ';
+const [isMobile, setIsMobile] = [window.innerWidth < 640, null];
+const mob = () => window.innerWidth < 640;
 
 // Supabase REST API helper
 async function supaFetch(path, method, body) {
@@ -1439,7 +1455,7 @@ function Btn({ onClick, children, variant = "primary", sm, disabled, style: sx =
   );
 }
 function Modal({ title, onClose, children, w = 520 }) {
-  return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 } }, /* @__PURE__ */ React.createElement("div", { style: { background: C.card, borderRadius: 24, padding: 32, width: "100%", maxWidth: w, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,.2)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 } }, /* @__PURE__ */ React.createElement("h2", { style: { fontSize: 18, fontWeight: 700, color: C.text, margin: 0 } }, title), /* @__PURE__ */ React.createElement("button", { onClick: onClose, style: { width: 32, height: 32, borderRadius: 9, border: "none", background: C.borderL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(Ico, { name: "x", size: 16, color: C.textM }))), children));
+  return /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 500, display: "flex", alignItems: window.innerWidth < 640 ? "flex-end" : "center", justifyContent: "center", padding: window.innerWidth < 640 ? 0 : 16 } }, /* @__PURE__ */ React.createElement("div", { style: { background: C.card, borderRadius: window.innerWidth < 640 ? "20px 20px 0 0" : 24, padding: window.innerWidth < 640 ? "20px 16px 32px" : 32, width: "100%", maxWidth: window.innerWidth < 640 ? "100%" : w, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 24px 80px rgba(0,0,0,.2)" } }, /* @__PURE__ */ React.createElement("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 } }, /* @__PURE__ */ React.createElement("h2", { style: { fontSize: 18, fontWeight: 700, color: C.text, margin: 0 } }, title), /* @__PURE__ */ React.createElement("button", { onClick: onClose, style: { width: 32, height: 32, borderRadius: 9, border: "none", background: C.borderL, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" } }, /* @__PURE__ */ React.createElement(Ico, { name: "x", size: 16, color: C.textM }))), children));
 }
 function ConfirmModal({ msg, onYes, onNo, danger }) {
   return /* @__PURE__ */ React.createElement(Modal, { title: danger ? "Confirmar acci\xF3n" : "\xBFEst\xE1s seguro?", onClose: onNo, w: 400 }, /* @__PURE__ */ React.createElement("p", { style: { color: C.textM, marginBottom: 24, lineHeight: 1.6 } }, msg), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 10, justifyContent: "flex-end" } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: onNo }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { variant: danger ? "danger" : "primary", onClick: onYes }, "Confirmar")));
@@ -2940,8 +2956,8 @@ function TransaccionesView({ txns, setTxns, month, year }) {
     ),
     importHistorial.length === 0
       ? /* @__PURE__ */ React.createElement("div", { style: { padding: "32px 18px", textAlign: "center", color: C.textL, fontSize: 13 } }, "No hay importaciones registradas todav\xEDa.")
-      : /* @__PURE__ */ React.createElement("div", { style: { maxHeight: 340, overflowY: "auto" } },
-          /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "auto 1fr auto auto auto auto", gap: 0, fontSize: 11 } },
+      : /* @__PURE__ */ React.createElement("div", { style: { maxHeight: 340, overflowY: "auto", overflowX: "auto", WebkitOverflowScrolling: "touch" } },
+          /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "auto 1fr auto auto auto auto", gap: 0, fontSize: 11, minWidth: 500 } },
             /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" } }, "Fecha"),
             /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase" } }, "Archivo"),
             /* @__PURE__ */ React.createElement("div", { style: { padding: "7px 14px", background: C.borderL, color: C.textL, fontWeight: 700, fontSize: 10, letterSpacing: ".06em", textTransform: "uppercase", textAlign: "center" } }, "Total"),
@@ -2986,7 +3002,7 @@ function TransaccionesView({ txns, setTxns, month, year }) {
   } }, "Guardar"), /* @__PURE__ */ React.createElement(Btn, { sm: true, variant: "ghost", onClick: () => setSaveRule(null) }, "No")), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 8, marginTop: 10 } }, /* @__PURE__ */ React.createElement(Btn, { variant: "ghost", onClick: () => setCsvPreview(null) }, "Cancelar"), /* @__PURE__ */ React.createElement(Btn, { onClick: confirmCSV }, "Importar ", csvPreview.length, " transacciones"))), txnsMes.length > 0 && /* @__PURE__ */ React.createElement("div", { style: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 } }, /* @__PURE__ */ React.createElement(KPICard, { label: "Ingresos", value: fmt(totalIng), color: C.green, icon: "arrowUp" }), /* @__PURE__ */ React.createElement(KPICard, { label: "Gastos", value: fmt(totalGas), color: C.red, icon: "arrowDown" })), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", flexDirection: "column", gap: 4 } }, filtered.length === 0 && /* @__PURE__ */ React.createElement("div", { style: { textAlign: "center", padding: 40, color: C.textL, fontSize: 13 } }, txns.length === 0 ? "Sin transacciones. Carga el CSV de la app o el XLSX de Bancolombia." : `Sin transacciones en ${MESES[month]} con ese filtro.`), filtered.map((t) => {
     const cat = getCatForSub(t.subcategoria) || t.categoria || "Otros";
     const color = CATEGORIAS[cat]?.color || C.textL;
-    return /* @__PURE__ */ React.createElement("div", { key: t.id, style: { background: C.card, borderRadius: 12, padding: "9px 14px", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 10 } }, /* @__PURE__ */ React.createElement(IcoBadge, { name: CAT_ICON_MAP[cat] || "box", color, size: 12 }), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.descripcion || t.subcategoria), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textL, display: "flex", gap: 6, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", null, t.fecha), /* @__PURE__ */ React.createElement(Badge, { t: t.fuente || "Manual" }), /* @__PURE__ */ React.createElement("span", { style: { color } }, t.subcategoria))), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: t.tipo === "INGRESO" ? C.green : C.red } }, t.tipo === "INGRESO" ? "+" : "-", fmt(t.valor))), /* @__PURE__ */ React.createElement(
+    return /* @__PURE__ */ React.createElement("div", { key: t.id, style: { background: C.card, borderRadius: 12, padding: "9px 14px", border: `1px solid ${C.border}`, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" } }, /* @__PURE__ */ React.createElement(IcoBadge, { name: CAT_ICON_MAP[cat] || "box", color, size: 12 }), /* @__PURE__ */ React.createElement("div", { style: { flex: 1, minWidth: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, color: C.text, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } }, t.descripcion || t.subcategoria), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 11, color: C.textL, display: "flex", gap: 6, alignItems: "center" } }, /* @__PURE__ */ React.createElement("span", null, t.fecha), /* @__PURE__ */ React.createElement(Badge, { t: t.fuente || "Manual" }), /* @__PURE__ */ React.createElement("span", { style: { color } }, t.subcategoria))), /* @__PURE__ */ React.createElement("div", { style: { textAlign: "right", flexShrink: 0 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 13, fontWeight: 700, color: t.tipo === "INGRESO" ? C.green : C.red } }, t.tipo === "INGRESO" ? "+" : "-", fmt(t.valor))), /* @__PURE__ */ React.createElement(
       "button",
       {
         onClick: () => openEditCat(t),
@@ -4127,7 +4143,7 @@ function AppShell({
     
     { id: "reglas", l: "Comercios", i: "link" }
   ];
-  return /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,Segoe UI,sans-serif", background: C.bg, minHeight: "100vh", paddingBottom: 72 } }, /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 0, zIndex: 100, background: C.card, borderBottom: `1px solid ${C.border}`, padding: "10px 20px", display: "flex", alignItems: "center", gap: 12, boxShadow: "0 2px 8px rgba(0,0,0,.06)" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 10, background: "#1A2521", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, /* @__PURE__ */ React.createElement(Ico, { name: "wallet", size: 16, color: "#C9A87C" })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "-.02em" } }, NAV_BOTTOM.find((n) => n.id === view)?.l || "Dashboard"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" } }, MESES[month], " ", year)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } }, /* @__PURE__ */ React.createElement(
+  return /* @__PURE__ */ React.createElement("div", { style: { fontFamily: "DM Sans,Segoe UI,sans-serif", background: C.bg, minHeight: "100vh", paddingBottom: 72 } }, /* @__PURE__ */ React.createElement("div", { style: { position: "sticky", top: 0, zIndex: 100, background: C.card, borderBottom: `1px solid ${C.border}`, padding: window.innerWidth < 640 ? "8px 12px" : "10px 20px", display: "flex", alignItems: "center", gap: window.innerWidth < 640 ? 8 : 12, boxShadow: "0 2px 8px rgba(0,0,0,.06)" } }, /* @__PURE__ */ React.createElement("div", { style: { width: 32, height: 32, borderRadius: 10, background: "#1A2521", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 } }, /* @__PURE__ */ React.createElement(Ico, { name: "wallet", size: 16, color: "#C9A87C" })), /* @__PURE__ */ React.createElement("div", { style: { flex: 1 } }, /* @__PURE__ */ React.createElement("div", { style: { fontSize: 16, fontWeight: 800, color: C.text, letterSpacing: "-.02em" } }, NAV_BOTTOM.find((n) => n.id === view)?.l || "Dashboard"), /* @__PURE__ */ React.createElement("div", { style: { fontSize: 10, color: C.textL, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase" } }, MESES[month], " ", year)), /* @__PURE__ */ React.createElement("div", { style: { display: "flex", gap: 6, alignItems: "center" } }, /* @__PURE__ */ React.createElement(
     "select",
     {
       value: month,
@@ -4157,7 +4173,7 @@ function AppShell({
       style: { width: 36, height: 36, borderRadius: 10, border: `1px solid ${C.border}`, background: C.card, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }
     },
     /* @__PURE__ */ React.createElement(Ico, { name: "refresh", size: 16, color: C.textM })
-  ))), /* @__PURE__ */ React.createElement("div", { style: { padding: "20px 16px 8px", maxWidth: 900, margin: "0 auto" } }, view === "dashboard" && /* @__PURE__ */ React.createElement(DashboardView, { txns, ppto, month, year }), view === "presupuesto" && /* @__PURE__ */ React.createElement(PresupuestoView, { ppto, setPpto, txns, setTxns, month, year }), view === "calendario" && /* @__PURE__ */ React.createElement(CalendarioView, { ppto, setPpto, month, year }), view === "creditos" && /* @__PURE__ */ React.createElement(CreditosView, { ppto, month, year, txns }), view === "cuotasTC" && /* @__PURE__ */ React.createElement(CuotasTCView, { cuotasTC, setCuotasTC }), view === "ahorros" && /* @__PURE__ */ React.createElement(AhorrosView, { txns }), view === "reglas" && /* @__PURE__ */ React.createElement(ReglasView, { txns }), view === "prestamos" && /* @__PURE__ */ React.createElement(PrestamosView, { txns }), view === "asistente" && /* @__PURE__ */ React.createElement(AsistenteView, { txns, ppto, month, year }), view === "transacciones" && /* @__PURE__ */ React.createElement(TransaccionesView, { txns, setTxns, month, year })), /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, paddingBottom: "env(safe-area-inset-bottom, 8px)", borderTop: `1px solid ${C.border}`, display: "flex", boxShadow: "0 -4px 20px rgba(0,0,0,.08)" } }, NAV_BOTTOM.map((n) => {
+  ))), /* @__PURE__ */ React.createElement("div", { style: { padding: window.innerWidth < 640 ? "10px 8px 8px" : "20px 16px 8px", maxWidth: 900, margin: "0 auto" } }, view === "dashboard" && /* @__PURE__ */ React.createElement(DashboardView, { txns, ppto, month, year }), view === "presupuesto" && /* @__PURE__ */ React.createElement(PresupuestoView, { ppto, setPpto, txns, setTxns, month, year }), view === "calendario" && /* @__PURE__ */ React.createElement(CalendarioView, { ppto, setPpto, month, year }), view === "creditos" && /* @__PURE__ */ React.createElement(CreditosView, { ppto, month, year, txns }), view === "cuotasTC" && /* @__PURE__ */ React.createElement(CuotasTCView, { cuotasTC, setCuotasTC }), view === "ahorros" && /* @__PURE__ */ React.createElement(AhorrosView, { txns }), view === "reglas" && /* @__PURE__ */ React.createElement(ReglasView, { txns }), view === "prestamos" && /* @__PURE__ */ React.createElement(PrestamosView, { txns }), view === "asistente" && /* @__PURE__ */ React.createElement(AsistenteView, { txns, ppto, month, year }), view === "transacciones" && /* @__PURE__ */ React.createElement(TransaccionesView, { txns, setTxns, month, year })), /* @__PURE__ */ React.createElement("div", { style: { position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 200, background: C.card, paddingBottom: "env(safe-area-inset-bottom, 8px)", borderTop: `1px solid ${C.border}`, display: "flex", boxShadow: "0 -4px 20px rgba(0,0,0,.08)" } }, NAV_BOTTOM.map((n) => {
     const active = view === n.id;
     const hasBadge = n.id === "calendario" && pendientesMes > 0;
     return /* @__PURE__ */ React.createElement(
